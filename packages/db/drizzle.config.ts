@@ -1,0 +1,9 @@
+import { defineConfig } from 'drizzle-kit';
+
+// Tenant database schema. Migrations are forward-only SQL, reviewed by hand (CLAUDE.md Hard Rule 12).
+export default defineConfig({
+  dialect: 'postgresql',
+  schema: './src/schema/index.ts',
+  out: './migrations',
+  dbCredentials: { url: process.env.TENANT_DATABASE_URL ?? '' },
+});
