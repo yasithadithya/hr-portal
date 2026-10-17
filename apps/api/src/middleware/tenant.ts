@@ -5,9 +5,11 @@ import type { TenantConnection } from '@hr/control-db';
 import '../context';
 import { supabaseAuthAdmin, type AuthAdmin } from '../lib/authAdmin';
 import { AppError } from '../lib/errors';
+import { supabaseStorage, type Storage } from '../lib/storage';
 import type { TenantRegistry } from '../tenancy/registry';
 
 export type AuthAdminFactory = (conn: TenantConnection) => AuthAdmin;
+export type StorageFactory = (conn: TenantConnection) => Storage;
 
 const defaultAuthAdmin: AuthAdminFactory = (conn) =>
   supabaseAuthAdmin(conn.supabaseUrl, conn.serviceRoleKey);
@@ -19,9 +21,12 @@ const defaultAuthAdmin: AuthAdminFactory = (conn) =>
  */
 export function tenantMiddleware(
   registry: TenantRegistry,
-  opts: { authAdmin?: AuthAdminFactory | undefined } = {},
+  opts: { authAdmin?: AuthAdminFactory | undefined; storage?: StorageFactory | undefined } = {},
 ): RequestHandler {
   const authAdminFactory = opts.authAdmin ?? defaultAuthAdmin;
+  const storageFactory =
+    opts.storage ??
+    ((conn: TenantConnection) => supabaseStorage(conn.supabaseUrl, conn.serviceRoleKey));
   return async (req, _res, next) => {
     const resolved = await registry.resolve(req.hostname ?? '');
     if (
@@ -36,11 +41,13 @@ export function tenantMiddleware(
     }
     const { supabaseUrl, anonKey, jwksUrl } = resolved.connection;
     let admin: AuthAdmin | undefined;
+    let storage: Storage | undefined;
     req.ctx = {
       tenant: resolved.tenant,
       db: registry.db(resolved),
       supabase: { url: supabaseUrl, anonKey, jwksUrl },
       authAdmin: () => (admin ??= authAdminFactory(resolved.connection)),
+      storage: () => (storage ??= storageFactory(resolved.connection)),
       permissions: {},
       actor: {
         userId: null,

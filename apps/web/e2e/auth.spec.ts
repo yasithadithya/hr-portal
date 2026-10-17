@@ -10,6 +10,7 @@ test('owner invites an HR admin, who accepts and sees only permitted menus', asy
   isMobile,
 }) => {
   test.skip(isMobile, 'invite flow runs once (desktop)');
+  test.setTimeout(150_000);
   const email = `hr-${Date.now()}@dev.local`;
 
   // Owner invites

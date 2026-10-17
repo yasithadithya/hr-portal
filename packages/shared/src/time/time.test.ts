@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   addDays,
+  countWorkingDays,
   eachDay,
+  monthRange,
+  workingValue,
   isValidBusinessDate,
   isWeekend,
   today,
@@ -87,5 +90,31 @@ describe('date arithmetic', () => {
     expect(isValidBusinessDate('2028-02-29')).toBe(true);
     expect(isValidBusinessDate('2026-1-01')).toBe(false);
     expect(() => weekdayOf('nope')).toThrow(RangeError);
+  });
+});
+
+describe('working days with calendar and holidays', () => {
+  // October 2026: 1st is a Thursday; 31 days; Saturdays 3,10,17,24,31; Sundays 4,11,18,25
+  const oct = monthRange(2026, 10);
+
+  it('computes month ranges, including leap February', () => {
+    expect(oct).toEqual({ start: '2026-10-01', end: '2026-10-31' });
+    expect(monthRange(2028, 2).end).toBe('2028-02-29');
+    expect(monthRange(2026, 12).end).toBe('2026-12-31');
+  });
+
+  it('Mon–Fri: 22 working days in Oct 2026', () => {
+    expect(countWorkingDays(oct.start, oct.end, MON_FRI)).toBe(22);
+  });
+
+  it('half Saturdays add 0.5 each (5 Saturdays → +2.5)', () => {
+    expect(countWorkingDays(oct.start, oct.end, MON_FRI_HALF_SAT)).toBe(24.5);
+  });
+
+  it('holidays remove the day whatever its portion; weekend holidays change nothing', () => {
+    const hols = new Set(['2026-10-15', '2026-10-24', '2026-10-25']); // Thu, half-Sat, Sun
+    expect(countWorkingDays(oct.start, oct.end, MON_FRI, hols)).toBe(21);
+    expect(countWorkingDays(oct.start, oct.end, MON_FRI_HALF_SAT, hols)).toBe(23);
+    expect(workingValue('2026-10-24', MON_FRI_HALF_SAT, hols)).toBe(0);
   });
 });

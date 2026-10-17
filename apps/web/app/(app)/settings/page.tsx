@@ -1,6 +1,14 @@
 'use client';
 
-import { History, ShieldCheck, Users } from 'lucide-react';
+import {
+  Building2,
+  CalendarDays,
+  History,
+  Network,
+  ShieldCheck,
+  SlidersHorizontal,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 
 import { RequirePermission } from '@/components/auth/require-permission';
@@ -16,6 +24,34 @@ const SECTIONS: {
   icon: typeof Users;
   perm: PermissionKey;
 }[] = [
+  {
+    href: '/settings/company',
+    title: 'Company',
+    description: 'Legal details, EPF/ETF numbers, logo, timezone',
+    icon: Building2,
+    perm: 'settings.manage',
+  },
+  {
+    href: '/settings/organisation',
+    title: 'Organisation',
+    description: 'Branches, departments, grades, designations, cost centres',
+    icon: Network,
+    perm: 'org.manage',
+  },
+  {
+    href: '/settings/calendars',
+    title: 'Work week & holidays',
+    description: 'Working days, half days and the holiday calendar',
+    icon: CalendarDays,
+    perm: 'settings.manage',
+  },
+  {
+    href: '/settings/preferences',
+    title: 'Preferences',
+    description: 'Two-factor authentication, brand colour, numbering',
+    icon: SlidersHorizontal,
+    perm: 'settings.manage',
+  },
   {
     href: '/settings/users',
     title: 'Users',

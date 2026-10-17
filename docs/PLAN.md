@@ -194,9 +194,9 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 - `settings(key, value jsonb, updated_by)` — generic typed settings (validated by Zod per key)
 
 ### Work
-- [ ] CRUD API + screens for all of the above; departments as tree
-- [ ] Holiday import: CSV upload + "copy from last year" + seed of the current year's SL holidays (marked "verify")
-- [ ] Settings screen grouped: Company, Work week, Numbering, Security (MFA required?), Branding (logo, primary colour)
+- [x] CRUD API + screens for all of the above; departments as tree
+- [~] Holiday import: CSV upload + "copy from last year" + seed of the current year's SL holidays (marked "verify") — CSV import (with preview) and copy-year are done; **the SL holiday seed is waiting on the official gazette list** (not guessed: Poya/lunar dates move every year)
+- [x] Settings screen grouped: Company, Work week, Numbering, Security (MFA required?), Branding (logo, primary colour)
 
 **Done when:** a tenant can be fully configured from the UI, and `shared/time` helpers use `work_calendars` + `holidays` for working-day counts (unit tested incl. half-day Saturday).
 
@@ -460,3 +460,15 @@ _(Claude Code appends dated decisions here.)_
 - **Gotcha:** drizzle's postgres-js driver mutates the client's serializers, so never share one `postgres()` client between drizzle and raw `sql.json(...)`.
 - **Web auth:** supabase-js per tenant project (URL/anon key from `/public/tenant`), `flowType: 'implicit'` so invite/recovery/magic links work across devices, and the session token is attached to API calls. `safeNext()` blocks open redirects. Local `supabase/config.toml`: redirect URLs for `localhost`/`*.localhost`, TOTP enabled, and email/sign-in rate limits raised **for local dev only** (production limits are set per project).
 - **Dev data:** `pnpm dev:users` (local only) creates owner/hr/payroll/manager/employee users with password `Password123!`. Playwright's globalSetup runs it, and e2e reads invite emails from local Mailpit.
+
+### 2026-10-18 — Phase 3
+- **Holidays are not seeded with guessed dates.** Sri Lankan Poya, bank and mercantile holidays change yearly and are gazetted; per CLAUDE.md we don't guess. HR imports a CSV (dry-run preview with per-line errors; commit is atomic and refused while errors remain) or copies last year (same month/day, all marked **unverified**, 29 Feb skipped in non-leap years). The UI flags unverified holidays until someone ticks them against the gazette. **Open:** get the official 2026/2027 list and ship it as a `verify` seed.
+- **Holiday `type`** is free text with suggested values; no logic branches on it.
+- **Working days:** `@hr/shared/time` `countWorkingDays(start, end, workWeek, holidays)`: full = 1, half = 0.5, any holiday = 0 (even on a half day). Unit-tested for half Saturdays in Oct 2026 (22 → 24.5) and holidays. `GET /work-calendars/:id/working-days` exposes it.
+- **Org reference data** (branches, departments, grades, designations, cost centres) shares one audited CRUD factory: reads are open to any signed-in user (for dropdowns), writes need `org.manage`, and rows are **archived, never deleted** (employees reference them). Departments reject cycles with a recursive check.
+- **Postgres constraint errors map to envelopes:** 23505 → 409 CONFLICT, 23503 → 400 (missing or in-use reference), 23514/23502 → 400. Drizzle wraps driver errors, so the handler walks `cause`.
+- **Company profile** is a singleton row (unique `singleton` column) seeded from the tenant name. Settings are a **typed registry** in `@hr/shared/settings` (Zod schema + default per key; unknown keys → 400).
+- **Logo** goes to the tenant's private `branding` bucket (raw upload ≤ 1 MB, PNG/JPEG/WebP/SVG), created lazily if missing. It's served via a 1-hour signed URL from `/public/tenant`, along with the company name and brand colour. The brand colour overrides the `--primary`/`--ring` tokens.
+- **Numbering:** `nextSequenceValue(tx, key)` uses `UPDATE … RETURNING` inside the caller's transaction (row lock), so concurrent hires never share a number and a rolled-back hire doesn't consume one (tested with 20 parallel transactions).
+- **Seeds take context** `{ tenantName, timezone }`; org defaults are a Mon–Fri calendar, `EMP-0001` numbering, and the company profile.
+- **Reliability:** web requests time out after 20 s (a retryable error instead of an endless spinner); the auth gate shows a retryable "workspace unavailable" error; e2e warms the proxy first. API integration test files run sequentially (`fileParallelism: false`) to stay under local Postgres `max_connections` (100; Supabase services use ~30).

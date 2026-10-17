@@ -89,3 +89,42 @@ export function eachDay(start: BusinessDate, end: BusinessDate): BusinessDate[] 
   }
   return out;
 }
+
+/** Working value of a day: 1 full, 0.5 half, 0 for off days and holidays. */
+export function workingValue(
+  date: BusinessDate,
+  workWeek: WorkWeek,
+  holidays: ReadonlySet<BusinessDate>,
+): 0 | 0.5 | 1 {
+  if (holidays.has(date)) return 0;
+  const portion = dayPortion(date, workWeek);
+  return portion === 'full' ? 1 : portion === 'half' ? 0.5 : 0;
+}
+
+/**
+ * Working days between start and end inclusive, for a work calendar and its holidays.
+ * Half days count 0.5. Uses calendar dates only, never server-local time.
+ */
+export function countWorkingDays(
+  start: BusinessDate,
+  end: BusinessDate,
+  workWeek: WorkWeek,
+  holidays: ReadonlySet<BusinessDate> = new Set(),
+): number {
+  return eachDay(start, end).reduce((sum, d) => sum + workingValue(d, workWeek, holidays), 0);
+}
+
+/** First and last day of a calendar month. */
+export function monthRange(
+  year: number,
+  month: number,
+): { start: BusinessDate; end: BusinessDate } {
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    throw new RangeError(`Invalid month ${month}`);
+  }
+  const mm = String(month).padStart(2, '0');
+  const start = `${String(year).padStart(4, '0')}-${mm}-01`;
+  const next =
+    month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  return { start, end: addDays(next, -1) };
+}

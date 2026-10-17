@@ -3,6 +3,7 @@ import type { Actor, TenantDb } from '@hr/db';
 import type { PermissionKey, PermissionMap, Scope } from '@hr/shared';
 
 import type { AuthAdmin } from './lib/authAdmin';
+import type { Storage } from './lib/storage';
 
 export interface AuthedUser {
   id: string;
@@ -21,6 +22,8 @@ export interface RequestContext {
   supabase: { url: string | null; anonKey: string | null; jwksUrl: string | null };
   /** Supabase Auth admin for this tenant's project (service-role key; server only). */
   authAdmin: () => AuthAdmin;
+  /** Private file storage in the tenant's project (signed URLs only). */
+  storage: () => Storage;
   user?: AuthedUser;
   permissions: PermissionMap;
   /** Who/where for audit_log rows. */

@@ -163,7 +163,9 @@ const steps: Step[] = [
       const conn = await getTenantConnection(db, tenant, key);
       const sql = connect(conn.dbDirectUrl, { max: 1 });
       try {
-        await runSeeds(tenantDb(sql), (m) => log(`  ${m}`));
+        await runSeeds(tenantDb(sql), { tenantName: tenant.name, timezone: tenant.timezone }, (m) =>
+          log(`  ${m}`),
+        );
         return { status: 'succeeded' };
       } finally {
         await sql.end();

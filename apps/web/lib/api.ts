@@ -7,6 +7,8 @@ const API_URL = '';
 
 const successEnvelope = successSchema(z.unknown());
 
+const REQUEST_TIMEOUT_MS = 20_000;
+
 /** Error thrown for any non-success envelope or unexpected response. */
 export class ApiError extends Error {
   constructor(
@@ -46,19 +48,26 @@ export async function apiRequest<T extends z.ZodType>(
 ): Promise<z.infer<T>> {
   let res: Response;
   const token = await tokenProvider();
+  // Files/blobs go up raw (caller sets content-type); everything else is JSON.
+  const isBlob = typeof Blob !== 'undefined' && body instanceof Blob;
+  // A hung request becomes a retryable error instead of an endless spinner.
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   try {
     res = await fetch(`${API_URL}${path}`, {
       method,
-      signal,
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       headers: {
         accept: 'application/json',
         ...(token ? { authorization: `Bearer ${token}` } : {}),
-        ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+        ...(body === undefined || isBlob ? {} : { 'content-type': 'application/json' }),
         ...headers,
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isBlob ? (body as Blob) : JSON.stringify(body),
     });
   } catch (err) {
+    if (timeout.aborted && !signal?.aborted) {
+      throw new ApiError('INTERNAL_ERROR', 'The server took too long to respond', 0, err);
+    }
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
     throw new ApiError('INTERNAL_ERROR', 'Could not reach the server', 0, err);
   }

@@ -25,6 +25,7 @@ import { createTestDatabase, dropTestDatabase } from '@hr/db/testing';
 import { createApp, type AppOptions } from '../app';
 import { loadEnv } from '../env';
 import { localJwks } from '../lib/jwt';
+import { memoryStorage } from '../lib/storage';
 import { PoolManager } from '../tenancy/pools';
 import { TenantRegistry } from '../tenancy/registry';
 
@@ -64,7 +65,10 @@ export async function createHarness(
     await migrate(sql, tenantFiles, { table: 'tenant' });
     // Separate client: drizzle swaps postgres.js serializers, which breaks raw `sql.json` use.
     const seedSql = connect(dbUrl, { max: 1 });
-    await runSeeds(tenantDb(seedSql));
+    await runSeeds(tenantDb(seedSql), {
+      tenantName: `Tenant ${slug.toUpperCase()}`,
+      timezone: 'Asia/Colombo',
+    });
     await seedSql.end();
     const [t] = await control
       .insert(controlSchema.tenants)
@@ -91,6 +95,8 @@ export async function createHarness(
     },
   });
 
+  const storage = memoryStorage();
+
   const pools = new PoolManager({ maxPools: 10, connectionsPerPool: 2, idleMs: 60_000 });
   const registry = new TenantRegistry({ control, masterKey, pools });
   const env = loadEnv({ NODE_ENV: 'test', TRUST_PROXY: 'loopback' });
@@ -104,6 +110,7 @@ export async function createHarness(
       platformJwksUrl: 'https://platform.supabase.test/auth/v1/.well-known/jwks.json',
       jwks: localJwks(jwks),
       authAdmin,
+      storage: () => storage,
     },
     ...extra,
   });
@@ -172,6 +179,7 @@ export async function createHarness(
     tenants,
     masterKey,
     invites,
+    storage,
     sign,
     tokenFor,
     createUser,

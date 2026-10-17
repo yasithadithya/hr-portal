@@ -54,7 +54,7 @@ await main(async () => {
         const conn = await getTenantConnection(db, tenant, masterKey());
         const tsql = connect(conn.dbDirectUrl, { max: 1 });
         try {
-          await runSeeds(tenantDb(tsql));
+          await runSeeds(tenantDb(tsql), { tenantName: tenant.name, timezone: tenant.timezone });
           log(`✔ ${r.slug}: seeds up to date`);
         } finally {
           await tsql.end();

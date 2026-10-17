@@ -17,6 +17,9 @@ interface AuthState {
   loading: boolean;
   me: Me | undefined;
   meError: ApiError | null;
+  /** The workspace config itself could not be loaded (unknown host, server down). */
+  tenantError: unknown;
+  retryTenant: () => void;
   can: (key: PermissionKey, scope?: Scope) => boolean;
   signOut: () => Promise<void>;
 }
@@ -24,7 +27,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: tenant } = usePublicTenant();
+  const { data: tenant, error: tenantError, refetch: refetchTenant } = usePublicTenant();
   const queryClient = useQueryClient();
   // getSupabase caches per project, so this is a stable reference across renders.
   const supabase =
@@ -62,7 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthState = {
     supabase,
     session,
-    loading: loading || !supabase,
+    loading: !tenantError && (loading || !supabase),
+    tenantError,
+    retryTenant: () => void refetchTenant(),
     me: session ? meQuery.data : undefined,
     meError: meQuery.error instanceof ApiError ? meQuery.error : null,
     can: (key, scope = 'self') => !!meQuery.data && can(meQuery.data.permissions, key, scope),

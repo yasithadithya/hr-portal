@@ -5,3 +5,4 @@ export * from './settings';
 export * from './employees';
 export * from './auth';
 export * from './audit';
+export * from './org';

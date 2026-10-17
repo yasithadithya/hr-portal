@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 
 import { RequireAuth } from '@/components/auth/require-auth';
-import { Brand, SidebarNav } from '@/components/shell/sidebar';
+import { Brand, BrandColor, SidebarNav } from '@/components/shell/sidebar';
 import { Topbar } from '@/components/shell/topbar';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh">
+      <BrandColor />
       <aside className="bg-sidebar text-sidebar-foreground hidden w-60 shrink-0 border-r md:block">
         <Brand />
         <SidebarNav />

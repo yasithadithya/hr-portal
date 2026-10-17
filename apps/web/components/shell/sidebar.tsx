@@ -48,11 +48,22 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 export function Brand() {
   const { data: tenant } = usePublicTenant();
   return (
-    <div
-      className="flex h-14 items-center truncate px-6 text-base font-semibold tracking-tight"
-      data-testid="tenant-name"
-    >
-      {tenant?.name ?? 'HR Portal'}
+    <div className="flex h-14 items-center gap-2 px-6">
+      {tenant?.logoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL
+        <img src={tenant.logoUrl} alt="" className="size-7 rounded object-contain" />
+      )}
+      <span className="truncate text-base font-semibold tracking-tight" data-testid="tenant-name">
+        {tenant?.name ?? 'HR Portal'}
+      </span>
     </div>
   );
+}
+
+/** Applies the tenant's brand colour (Settings → Preferences) to the primary theme token. */
+export function BrandColor() {
+  const { data: tenant } = usePublicTenant();
+  const color = tenant?.theme.primaryColor;
+  if (!color || !/^#[0-9a-f]{6}$/i.test(color)) return null;
+  return <style>{`:root, .dark { --primary: ${color}; --ring: ${color}; }`}</style>;
 }

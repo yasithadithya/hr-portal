@@ -10,11 +10,13 @@ import { authenticate } from './middleware/auth';
 import { allowlistOrigins, corsMiddleware, type OriginCheck } from './middleware/cors';
 import { errorHandler, notFound } from './middleware/errors';
 import { requestLogger } from './middleware/requestLogger';
-import { tenantMiddleware, type AuthAdminFactory } from './middleware/tenant';
+import { tenantMiddleware, type AuthAdminFactory, type StorageFactory } from './middleware/tenant';
 import { auditRoutes } from './modules/audit/routes';
+import { companyRoutes } from './modules/company/routes';
 import { employeeRoutes } from './modules/employees/routes';
 import { healthRoutes } from './modules/health/routes';
 import { meRoutes } from './modules/me/routes';
+import { orgRoutes } from './modules/org/routes';
 import { platformRoutes } from './modules/platform/routes';
 import { publicRoutes } from './modules/public/routes';
 import { roleRoutes } from './modules/roles/routes';
@@ -31,6 +33,8 @@ export interface TenancyDeps {
   jwks?: JwksResolver;
   /** Tests inject a fake Supabase Auth admin (invites). */
   authAdmin?: AuthAdminFactory;
+  /** Tests inject in-memory storage. */
+  storage?: StorageFactory;
 }
 
 export interface AppOptions {
@@ -82,7 +86,12 @@ export function createApp({
 
     // Everything under /api/v1 is tenant-scoped: unknown host → 404 before auth.
     const api = Router();
-    api.use(tenantMiddleware(tenancy.registry, { authAdmin: tenancy.authAdmin }));
+    api.use(
+      tenantMiddleware(tenancy.registry, {
+        authAdmin: tenancy.authAdmin,
+        storage: tenancy.storage,
+      }),
+    );
     api.use(publicRoutes());
     mountTenantPublic?.(api);
 
@@ -93,6 +102,8 @@ export function createApp({
     api.use(roleRoutes());
     api.use(auditRoutes());
     api.use(employeeRoutes());
+    api.use(companyRoutes());
+    api.use(orgRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

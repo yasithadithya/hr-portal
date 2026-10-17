@@ -11,7 +11,34 @@ import { createTestDatabase, dropTestDatabase } from '../testing';
 
 import { withAudit } from './audit';
 import { scopeCondition } from './scope';
+import { nextSequenceValue } from './sequences';
 import { loadPermissions } from './users';
+
+describe('number sequences', () => {
+  it('hands out unique, gap-free numbers under concurrency; rollback does not burn a number', async () => {
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () => db.transaction((tx) => nextSequenceValue(tx, 'employee'))),
+    );
+    expect(new Set(results).size).toBe(20);
+    expect([...results].sort()).toEqual(
+      Array.from({ length: 20 }, (_, i) => `EMP-${String(i + 1).padStart(4, '0')}`),
+    );
+
+    await expect(
+      db.transaction(async (tx) => {
+        await nextSequenceValue(tx, 'employee');
+        throw new Error('hire failed');
+      }),
+    ).rejects.toThrow('hire failed');
+    expect(await db.transaction((tx) => nextSequenceValue(tx, 'employee'))).toBe('EMP-0021');
+  });
+
+  it('fails clearly for unknown sequences', async () => {
+    await expect(db.transaction((tx) => nextSequenceValue(tx, 'nope'))).rejects.toThrow(
+      /not configured/,
+    );
+  });
+});
 
 const DB = 'hr_test_access';
 let sql: Sql;
