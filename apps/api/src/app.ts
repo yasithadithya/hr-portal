@@ -15,6 +15,7 @@ import { auditRoutes } from './modules/audit/routes';
 import { companyRoutes } from './modules/company/routes';
 import { employeeRoutes } from './modules/employees/routes';
 import { healthRoutes } from './modules/health/routes';
+import { importRoutes } from './modules/imports/routes';
 import { meRoutes } from './modules/me/routes';
 import { orgRoutes } from './modules/org/routes';
 import { platformRoutes } from './modules/platform/routes';
@@ -104,6 +105,7 @@ export function createApp({
     api.use(employeeRoutes());
     api.use(companyRoutes());
     api.use(orgRoutes());
+    api.use(importRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

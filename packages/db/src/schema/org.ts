@@ -128,7 +128,7 @@ export const departments = pgTable(
     code: text('code').notNull().unique(),
     name: text('name').notNull(),
     parentId: uuid('parent_id').references((): AnyPgColumn => departments.id),
-    headEmployeeId: uuid('head_employee_id').references(() => employees.id),
+    headEmployeeId: uuid('head_employee_id').references((): AnyPgColumn => employees.id),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     ...auditColumns(),
   },

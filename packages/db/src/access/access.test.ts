@@ -59,7 +59,7 @@ afterAll(async () => {
 async function emp(no: string, reportsToId: string | null = null) {
   const [e] = await db
     .insert(employees)
-    .values({ employeeNo: no, firstName: no, lastName: 'X', reportsToId })
+    .values({ joinDate: '2020-01-01', employeeNo: no, firstName: no, lastName: 'X', reportsToId })
     .returning();
   return e!;
 }
@@ -73,7 +73,7 @@ describe('audit log', () => {
       async (tx) => {
         const [e] = await tx
           .insert(employees)
-          .values({ employeeNo: 'A-1', firstName: 'A', lastName: 'B' })
+          .values({ joinDate: '2020-01-01', employeeNo: 'A-1', firstName: 'A', lastName: 'B' })
           .returning();
         return { action: 'create', entityId: e!.id, after: { ...e, password: 'x' }, result: e! };
       },
@@ -87,7 +87,9 @@ describe('audit log', () => {
     const before = (await db.select().from(auditLog)).length;
     await expect(
       withAudit(db, { userId: null }, 'employees', async (tx) => {
-        await tx.insert(employees).values({ employeeNo: 'A-2', firstName: 'A', lastName: 'B' });
+        await tx
+          .insert(employees)
+          .values({ joinDate: '2020-01-01', employeeNo: 'A-2', firstName: 'A', lastName: 'B' });
         throw new Error('boom');
       }),
     ).rejects.toThrow('boom');

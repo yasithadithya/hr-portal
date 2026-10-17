@@ -4,8 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { errorMessage } from '@/components/common/error-alert';
-import { api, ApiError } from '@/lib/api';
 import {
   branchSchema,
   companyProfileDtoSchema,
@@ -24,6 +22,9 @@ import {
   type SettingKey,
   type WorkCalendarInput,
 } from '@hr/shared';
+
+import { errorMessage } from '@/components/common/error-alert';
+import { api, ApiError } from '@/lib/api';
 
 function useWrite<TVars, TResult = unknown>(
   fn: (vars: TVars) => Promise<TResult>,

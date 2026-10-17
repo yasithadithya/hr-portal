@@ -110,3 +110,20 @@ export const api = {
   delete: <T extends z.ZodType>(path: string, schema: T, opts?: Omit<RequestOptions, 'body'>) =>
     apiRequest('DELETE', path, schema, opts),
 };
+
+/** Downloads a non-JSON response (e.g. CSV export) with the user's token and saves it. */
+export async function apiDownload(path: string, fallbackName: string): Promise<void> {
+  const token = await tokenProvider();
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: token ? { authorization: `Bearer ${token}` } : {},
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!res.ok)
+    throw new ApiError('INTERNAL_ERROR', `Download failed (HTTP ${res.status})`, res.status);
+  const name =
+    /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  a.click();
+  URL.revokeObjectURL(url);
+}

@@ -4,11 +4,9 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { errorMessage } from '@/components/common/error-alert';
-import { api } from '@/lib/api';
 import {
   auditPageSchema,
-  employeeSummarySchema,
+  employeePageSchema,
   roleSchema,
   userSchema,
   type CreateRoleInput,
@@ -16,6 +14,9 @@ import {
   type UpdateRoleInput,
   type UpdateUserInput,
 } from '@hr/shared';
+
+import { errorMessage } from '@/components/common/error-alert';
+import { api } from '@/lib/api';
 
 export function useUsers() {
   return useQuery({
@@ -36,7 +37,9 @@ export function useEmployeeOptions(enabled = true) {
   return useQuery({
     queryKey: ['employees', 'options'],
     queryFn: ({ signal }) =>
-      api.get('/api/v1/employees', z.array(employeeSummarySchema), { signal }),
+      api
+        .get('/api/v1/employees?pageSize=1000&sort=name', employeePageSchema, { signal })
+        .then((p) => p.items),
     enabled,
   });
 }

@@ -12,7 +12,7 @@ import { NAV_ITEMS } from './nav';
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { can } = useAuth();
-  const items = NAV_ITEMS.filter((i) => !i.anyOf || i.anyOf.some((k) => can(k)));
+  const items = NAV_ITEMS.filter((i) => !i.anyOf || i.anyOf.some((k) => can(k, i.minScope)));
 
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 p-3">

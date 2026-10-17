@@ -3,6 +3,8 @@
 import { Archive, ArchiveRestore, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 
+import type { Department } from '@hr/shared';
+
 import { RequirePermission } from '@/components/auth/require-permission';
 import { ErrorAlert } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
@@ -36,7 +38,6 @@ import {
   useSaveRef,
   type RefPath,
 } from '@/lib/queries/org';
-import type { Department } from '@hr/shared';
 
 type Option = { value: string; label: string };
 type FieldDef =

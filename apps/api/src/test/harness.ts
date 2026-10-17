@@ -164,9 +164,13 @@ export async function createHarness(
   }
 
   async function createEmployee(slug: string, no: string, reportsToId: string | null = null) {
-    const [e] = await tenants[slug]!.sql`
-      insert into employees (employee_no, first_name, last_name, reports_to_id)
-      values (${no}, ${no}, 'Test', ${reportsToId}) returning id`;
+    const sql = tenants[slug]!.sql;
+    const [e] = await sql`
+      insert into employees (employee_no, first_name, last_name, reports_to_id, join_date)
+      values (${no}, ${no}, 'Test', ${reportsToId}, '2020-01-01') returning id`;
+    await sql`
+      insert into employee_job_history (employee_id, effective_from, reports_to_id, employment_type, reason)
+      values (${e!.id}, '2020-01-01', ${reportsToId}, 'permanent', 'hire')`;
     return e!.id as string;
   }
 

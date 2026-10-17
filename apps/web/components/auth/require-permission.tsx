@@ -2,8 +2,9 @@
 
 import type { ReactNode } from 'react';
 
-import { useAuth } from '@/lib/auth';
 import type { PermissionKey, Scope } from '@hr/shared';
+
+import { useAuth } from '@/lib/auth';
 
 import { Forbidden } from './forbidden';
 

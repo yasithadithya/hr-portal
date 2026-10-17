@@ -3,6 +3,15 @@
 import { CheckCircle2, CircleAlert, Copy, FileUp, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import {
+  HOLIDAY_TYPES,
+  type Holiday,
+  type HolidayImportResult,
+  type WorkCalendar,
+} from '@hr/shared';
+import { type DayPortion, type WorkWeek } from '@hr/shared/time';
+import type { WEEKDAYS } from '@hr/shared/time';
+
 import { RequirePermission } from '@/components/auth/require-permission';
 import { ErrorAlert } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
@@ -41,14 +50,6 @@ import {
   useSaveCalendar,
   useSaveHoliday,
 } from '@/lib/queries/org';
-import {
-  HOLIDAY_TYPES,
-  type Holiday,
-  type HolidayImportResult,
-  type WorkCalendar,
-} from '@hr/shared';
-import { type DayPortion, type WorkWeek } from '@hr/shared/time';
-import type { WEEKDAYS } from '@hr/shared/time';
 
 const DAY_LABEL: Record<(typeof WEEKDAYS)[number], string> = {
   mon: 'Mon',

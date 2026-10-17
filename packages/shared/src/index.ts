@@ -6,3 +6,6 @@ export * from './api/users';
 export * from './api/org';
 export * from './settings';
 export * from './csv';
+export * from './nic';
+export * from './api/employees';
+export * from './api/imports';

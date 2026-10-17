@@ -65,11 +65,15 @@ await main(async () => {
       for (const p of PEOPLE) {
         const [no, first, last, managerNo] = p.emp;
         const [emp] = await sql`
-          insert into employees (employee_no, first_name, last_name, work_email, reports_to_id)
-          values (${no}, ${first}, ${last}, ${p.email},
+          insert into employees (employee_no, first_name, last_name, work_email, join_date, reports_to_id)
+          values (${no}, ${first}, ${last}, ${p.email}, '2024-01-01',
                   (select id from employees where employee_no = ${managerNo}))
           on conflict (employee_no) do update set work_email = excluded.work_email
-          returning id`;
+          returning id, reports_to_id`;
+        await sql`
+          insert into employee_job_history (employee_id, effective_from, reports_to_id, employment_type, reason)
+          values (${emp!.id}, '2024-01-01', ${emp!.reports_to_id}, 'permanent', 'hire')
+          on conflict (employee_id, effective_from) do nothing`;
 
         let authId = list.users.find((u) => u.email === p.email)?.id;
         if (authId) {

@@ -9,7 +9,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import type { PermissionKey } from '@hr/shared';
+import type { PermissionKey, Scope } from '@hr/shared';
 
 export interface NavItem {
   href: string;
@@ -17,8 +17,9 @@ export interface NavItem {
   icon: LucideIcon;
   /** Modules not built yet render disabled. */
   ready: boolean;
-  /** Shown if the user holds any of these (any scope). Omit = everyone signed in. */
+  /** Shown if the user holds any of these (at `minScope`). Omit = everyone signed in. */
   anyOf?: PermissionKey[];
+  minScope?: Scope;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -28,8 +29,9 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/employees',
     label: 'Employees',
     icon: Users,
-    ready: false,
-    anyOf: ['employees.create', 'employees.update'],
+    ready: true,
+    anyOf: ['employees.read'],
+    minScope: 'team',
   },
   {
     href: '/leave',

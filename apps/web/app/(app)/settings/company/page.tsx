@@ -6,6 +6,8 @@ import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
+import { companyProfileSchema, type CompanyProfile } from '@hr/shared';
+
 import { RequirePermission } from '@/components/auth/require-permission';
 import { ErrorAlert } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
@@ -16,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/lib/auth';
 import { useCompany, useSaveCompany, useUploadLogo } from '@/lib/queries/org';
-import { companyProfileSchema, type CompanyProfile } from '@hr/shared';
 
 type Form = z.input<typeof companyProfileSchema>;
 

@@ -212,15 +212,15 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 - `employee_change_requests(id, employee_id, fields jsonb, status, reviewed_by)` — for self-service edits (Phase 8 uses it)
 
 ### Work
-- [ ] NIC validation for old (9 digits + V/X) and new (12 digits) formats, optional DOB/gender derivation shown as a suggestion (not auto-overwrite)
-- [ ] Employee list: search, filters (dept, branch, status, type), column chooser, server pagination
-- [ ] Employee profile page with tabs: Overview, Job (history timeline), Personal, Contacts, Bank & statutory, Documents, (later: Leave, Attendance, Payroll)
-- [ ] Actions: hire, transfer/promote (writes job history), confirm probation, set notice, exit (sets exit date + status; blocks future payroll after final run)
-- [ ] Documents: upload to tenant storage (private), signed URLs (60 s), expiry tracking + daily job flags documents expiring in N days (setting)
-- [ ] **CSV/XLSX bulk import** for employees: upload → column mapping → validation preview (row-level errors) → commit in a transaction → import report. Same framework reused later for salaries, leave opening balances, attendance
-- [ ] Export (CSV/XLSX) of the filtered list
-- [ ] Org chart view from `reports_to_id`
-- [ ] Probation/contract-end reminders (job → notification in Phase 8)
+- [x] NIC validation for old (9 digits + V/X) and new (12 digits) formats, optional DOB/gender derivation shown as a suggestion (not auto-overwrite)
+- [x] Employee list: search, filters (dept, branch, status, type), column chooser, server pagination
+- [x] Employee profile page with tabs: Overview, Job (history timeline), Personal, Contacts, Bank & statutory, Documents, (later: Leave, Attendance, Payroll)
+- [x] Actions: hire, transfer/promote (writes job history), confirm probation, set notice, exit (sets exit date + status; blocks future payroll after final run)
+- [~] Documents: upload to tenant storage (private), signed URLs (60 s), expiry tracking + daily job flags documents expiring in N days (setting) — upload/list/signed URL/delete and the expiring-documents query are done; the **daily job** arrives with the job runner in Phase 8
+- [x] **CSV/XLSX bulk import** for employees: upload → column mapping → validation preview (row-level errors) → commit in a transaction → import report. Same framework reused later for salaries, leave opening balances, attendance
+- [x] Export (CSV/XLSX) of the filtered list — CSV with UTF-8 BOM (opens in Excel); native XLSX export not built
+- [x] Org chart view from `reports_to_id`
+- [~] Probation/contract-end reminders (job → notification in Phase 8) — `GET /employees/upcoming` lists them; delivery comes with Phase 8 notifications
 
 **Done when:** importing a 500-row sample file with deliberate errors shows clear row errors and imports the valid set atomically; job history correctly answers "what was this person's department on date X" (test).
 
@@ -472,3 +472,15 @@ _(Claude Code appends dated decisions here.)_
 - **Numbering:** `nextSequenceValue(tx, key)` uses `UPDATE … RETURNING` inside the caller's transaction (row lock), so concurrent hires never share a number and a rolled-back hire doesn't consume one (tested with 20 parallel transactions).
 - **Seeds take context** `{ tenantName, timezone }`; org defaults are a Mon–Fri calendar, `EMP-0001` numbering, and the company profile.
 - **Reliability:** web requests time out after 20 s (a retryable error instead of an endless spinner); the auth gate shows a retryable "workspace unavailable" error; e2e warms the proxy first. API integration test files run sequentially (`fileParallelism: false`) to stay under local Postgres `max_connections` (100; Supabase services use ~30).
+
+### 2026-10-18 — Phase 4
+- **Job history is effective-dated and gap-free.** `applyJobChange` inserts (or, for the same start date, corrects) a record and re-links the neighbouring ranges, then projects the record in force *today* onto `employees`. Backdated and future-dated changes are allowed. `refreshJobProjections(today)` applies future changes on their start date (scheduled daily from Phase 8). Exit closes the last record at the exit date and refuses if later changes exist. Tested: "department on date X" across transfers, backdated inserts, corrections and future changes.
+- **The migration backfilled safely:** `join_date` was added with a temporary default (dropped in the same migration), and every existing employee got an opening `hire` record.
+- **Field-level privacy by scope:** `employees.read` at `all` scope (HR) or the employee themselves → `access: 'full'`. Team scope (managers) → `access: 'work'`: personal, bank/statutory, contacts and exit reason are withheld. Out-of-scope IDs return 404 like missing ones.
+- **NIC:** old (9 digits + V/X) and new (12 digits) formats. Day-of-year counts February as 29 days in every year, +500 for women. DOB/gender are offered as a *suggestion* (button), never auto-filled. NICs and EPF numbers are unique per tenant (partial unique indexes). **Test vectors are constructed from the documented scheme, not real cards — spot-check against a few real NICs with the pilot client.**
+- **Import framework** (`modules/imports`): the browser parses CSV/XLSX (`read-excel-file`), the user maps columns (auto-matched on labels/aliases), the API previews every row (required, Zod, lookups by code, duplicates against DB *and* within the file), and the commit re-validates and writes the valid rows in **one transaction** (`skipInvalid` opt-in; otherwise any error blocks). Rows may reference managers defined later in the same file. Verified with 500 rows / 6 deliberate errors → exact error lines, 494 imported atomically, nothing written when blocked.
+- **Documents/photos** go to private buckets (`employee-documents`, `employee-photos`): PDF/images/DOCX ≤ 10 MB, 60 s signed URLs, every download audited.
+- **Export:** CSV with a UTF-8 BOM (Excel shows Sinhala/Tamil names correctly). NIC/mobile/EPF columns are included only for all-scope readers. Exports are audited.
+- **Picker lists** use `pageSize ≤ 1000` (enough for the target 50–1,000 employees). A searchable picker can replace it if a client outgrows that.
+- **Lint:** imports group `@hr/*` before app-local `@/…`.
+- **Known environment caveat:** the repo is on OneDrive. One full-suite run failed transiently right after a repo-wide reformat and passed on three reruns. Moving the repo off OneDrive would remove that risk.

@@ -2,9 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { healthSchema } from '@hr/shared';
+
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { healthSchema } from '@hr/shared';
 
 export function HealthBadge() {
   const { data, isPending, isError } = useQuery({

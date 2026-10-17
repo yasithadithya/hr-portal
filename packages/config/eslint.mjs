@@ -47,6 +47,9 @@ export default tseslint.config(
         'error',
         {
           groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          // Workspace packages (@hr/*) first, then app-local aliases (@/…).
+          pathGroups: [{ pattern: '@/**', group: 'internal', position: 'after' }],
+          pathGroupsExcludedImportTypes: ['builtin'],
           'newlines-between': 'always',
           alphabetize: { order: 'asc', caseInsensitive: true },
         },

@@ -3,6 +3,8 @@
 import { MoreHorizontal, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
+import type { Role, User } from '@hr/shared';
+
 import { RequirePermission } from '@/components/auth/require-permission';
 import { ErrorAlert } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
@@ -50,7 +52,6 @@ import {
   useUpdateUser,
   useUsers,
 } from '@/lib/queries/admin';
-import type { Role, User } from '@hr/shared';
 
 const STATUS_VARIANT: Record<User['status'], 'default' | 'secondary' | 'outline'> = {
   active: 'default',
@@ -174,7 +175,7 @@ function InviteDialog({
                 <SelectItem value={NO_EMPLOYEE}>Not linked</SelectItem>
                 {employees.data?.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
-                    {e.employeeNo} · {e.firstName} {e.lastName}
+                    {e.employeeNo} · {e.name}
                   </SelectItem>
                 ))}
               </SelectContent>

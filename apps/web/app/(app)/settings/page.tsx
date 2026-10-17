@@ -11,11 +11,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import type { PermissionKey } from '@hr/shared';
+
 import { RequirePermission } from '@/components/auth/require-permission';
 import { PageHeader } from '@/components/common/page-header';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth';
-import type { PermissionKey } from '@hr/shared';
 
 const SECTIONS: {
   href: string;

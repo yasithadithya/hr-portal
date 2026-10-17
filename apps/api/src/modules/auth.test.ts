@@ -97,14 +97,16 @@ describe('authentication', () => {
 describe('IDOR: employees (self / team / all)', () => {
   it('an employee sees only themselves', async () => {
     const list = await get('/api/v1/employees', emp.token);
-    expect(list.body.data.map((e: { employeeNo: string }) => e.employeeNo)).toEqual(['E-DEV']);
+    expect(list.body.data.items.map((e: { employeeNo: string }) => e.employeeNo)).toEqual([
+      'E-DEV',
+    ]);
     expect((await get(`/api/v1/employees/${ids.lead}`, emp.token)).status).toBe(404);
     expect((await get(`/api/v1/employees/${ids.dev}`, emp.token)).status).toBe(200);
   });
 
   it('a manager sees their recursive team and nobody outside it', async () => {
     const list = await get('/api/v1/employees', mgr.token);
-    expect(list.body.data.map((e: { employeeNo: string }) => e.employeeNo).sort()).toEqual([
+    expect(list.body.data.items.map((e: { employeeNo: string }) => e.employeeNo).sort()).toEqual([
       'E-DEV',
       'E-LEAD',
       'E-MGR',
@@ -116,7 +118,7 @@ describe('IDOR: employees (self / team / all)', () => {
 
   it('HR (all) sees everyone', async () => {
     const list = await get('/api/v1/employees', hr.token);
-    expect(list.body.data).toHaveLength(5);
+    expect(list.body.data.items).toHaveLength(5);
   });
 
   it('out-of-scope and non-existent look the same (no ID oracle)', async () => {

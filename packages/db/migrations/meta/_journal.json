@@ -29,6 +29,13 @@
       "when": 1792266326720,
       "tag": "0003_company_org",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792267992336,
+      "tag": "0004_employee_core",
+      "breakpoints": true
     }
   ]
 }

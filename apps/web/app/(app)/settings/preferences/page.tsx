@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { formatSequence, type NumberSequence } from '@hr/shared';
+
 import { RequirePermission } from '@/components/auth/require-permission';
 import { ErrorAlert } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
@@ -12,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useSaveSequence, useSaveSetting, useSequences, useSettings } from '@/lib/queries/org';
-import { formatSequence, type NumberSequence } from '@hr/shared';
 
 function SequenceRow({ seq }: { seq: NumberSequence }) {
   const save = useSaveSequence();

@@ -3,6 +3,15 @@
 import { Copy, Lock, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import {
+  PERMISSION_KEYS,
+  PERMISSIONS,
+  type PermissionKey,
+  type Role,
+  type RolePermission,
+  type Scope,
+} from '@hr/shared';
+
 import { RequirePermission } from '@/components/auth/require-permission';
 import { ErrorAlert } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
@@ -28,14 +37,6 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCreateRole, useDeleteRole, useRoles, useUpdateRole } from '@/lib/queries/admin';
-import {
-  PERMISSION_KEYS,
-  PERMISSIONS,
-  type PermissionKey,
-  type Role,
-  type RolePermission,
-  type Scope,
-} from '@hr/shared';
 
 const NONE = 'none';
 const SCOPE_LABEL: Record<Scope, string> = { self: 'Own', team: 'Team', all: 'Everyone' };
