@@ -245,13 +245,13 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 - **Seeds (editable, flagged "verify with client"):** Annual, Casual, Sick/Medical, Maternity, No-pay, Short leave, Lieu leave. Do not hard-code entitlement law in code.
 
 ### Work
-- [ ] Leave types & policies admin; policy preview ("who does this apply to")
-- [ ] Opening balance import (uses Phase 4 import framework)
-- [ ] Apply leave (half-days, attachment), my requests, cancel/withdraw
-- [ ] Approvals inbox for managers/HR; bulk approve
-- [ ] Team calendar (month view; who's off), company calendar with holidays
-- [ ] Balance report and leave liability report (days × daily rate later from payroll)
-- [ ] Year-end processing screen with dry-run preview
+- [x] Leave types & policies admin; policy preview ("who does this apply to")
+- [x] Opening balance import (uses Phase 4 import framework)
+- [x] Apply leave (half-days, attachment), my requests, cancel/withdraw
+- [x] Approvals inbox for managers/HR; bulk approve
+- [x] Team calendar (month view; who's off), company calendar with holidays
+- [~] Balance report and leave liability report (days × daily rate later from payroll) — balance report done; liability (× daily rate) needs payroll (Phase 7)
+- [x] Year-end processing screen with dry-run preview
 
 **Done when:** golden tests for day counting (weekends, half Saturday, holidays, half-day start/end), concurrency test (two simultaneous requests cannot overspend), year-end carry-forward/expiry tests.
 
@@ -484,3 +484,15 @@ _(Claude Code appends dated decisions here.)_
 - **Picker lists** use `pageSize ≤ 1000` (enough for the target 50–1,000 employees). A searchable picker can replace it if a client outgrows that.
 - **Lint:** imports group `@hr/*` before app-local `@/…`.
 - **Known environment caveat:** the repo is on OneDrive. One full-suite run failed transiently right after a repo-wide reformat and passed on three reruns. Moving the repo off OneDrive would remove that risk.
+
+### 2026-10-18 — Phase 5
+- **No guessed entitlements.** Seeds create ANNUAL, CASUAL, SICK, MATERNITY (female-only), NOPAY (no balance needed), SHORT (hours) and LIEU (granted by adjustment), each with a catch-all policy at **0 and `needs_review`**. Staff can't take paid leave until HR enters the client's entitlements (statutory minimums + contract), and the admin screen nags until every policy is reviewed. **Open:** confirm the pilot client's entitlements, eligibility rules and carry-forward caps.
+- **Ledger:** `leave_ledger` is append-only by trigger. Balance = `SUM(amount)` per employee/type/year (`leave_balances_v`). Amounts are in the type's unit (days, or hours for short leave). Approve → `taken` (−); cancel-after-approve → `reversal` (+). Corrections are `adjustment` rows.
+- **Accrual is lazy and idempotent** rather than cron-driven. Balances and requests materialise any due `accrual` (and carried-leave `expiry`) entries using unique `idempotency_key`s, so no job has to have run. Upfront policies credit the (prorated) year once eligible. Monthly policies credit 1/12 per month from cumulative rounding, so totals never drift.
+- **Proration/rounding are policy data:** none / monthly (join month counts as full) / daily, plus `rounding` (none, nearest ½, down to ½, down to whole, nearest whole) and `eligible_after_months`.
+- **Leave year = calendar year.** Requests can't span two years (must be split). Past years show as of 31 Dec, the current year as of today, future years as of 1 Jan.
+- **Day counting** comes from the employee's branch calendar (else the default), holidays and half days. A multi-day request may start in the afternoon and/or end at midday. First-half and second-half leave can share a date; any other overlap is refused.
+- **Concurrency:** apply locks the employee row (`SELECT … FOR UPDATE`) before the balance and overlap checks. A test fires two simultaneous 2-day requests against a 3-day balance: exactly one wins.
+- **Approvals** (`approval_flows.leave`, default `['manager']`): the manager step goes to `reports_to`, or straight to HR if there is none. HR (`leave.approve` all) can act on any step. Nobody approves their own leave. A required supporting document blocks the *final* approval, not the application. Bulk decide runs each request in its own transaction and reports failures individually.
+- **Year-end:** preview, then a single keyed run (`leave_year_runs`; a second run → 409). It carries `min(closing, cap)` into next year. Carried leave is used first (FIFO), and whatever is unused at `carry_forward_expiry_months` expires lazily via an `expiry` ledger row.
+- **E2E stability:** Playwright runs with 2 workers. The full stack shares one machine, and 4 workers caused a timeout plus a Playwright-internal JSON error. Checked that the Next proxy passes large bodies intact (a 616 KB response matched byte-for-byte).

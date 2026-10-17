@@ -6,3 +6,4 @@ export * from './employees';
 export * from './auth';
 export * from './audit';
 export * from './org';
+export * from './leave';

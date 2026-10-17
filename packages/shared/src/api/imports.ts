@@ -5,7 +5,7 @@ import { z } from 'zod';
  * salaries). The browser parses CSV/XLSX, the user maps file columns to fields, and the API
  * validates every row, previews errors, then commits the valid rows in one transaction.
  */
-export const IMPORT_KINDS = ['employees'] as const;
+export const IMPORT_KINDS = ['employees', 'leave-balances'] as const;
 export type ImportKind = (typeof IMPORT_KINDS)[number];
 
 export const importFieldSchema = z.object({

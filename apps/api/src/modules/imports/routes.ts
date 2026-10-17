@@ -24,13 +24,18 @@ import {
   previewImport,
   type ImportDefinition,
 } from './framework';
+import { leaveBalanceImport } from './leaveBalances';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry
 const DEFINITIONS: Record<ImportKind, ImportDefinition<any, any>> = {
   employees: employeeImport,
+  'leave-balances': leaveBalanceImport,
 };
 
-const PERMISSION: Record<ImportKind, PermissionKey> = { employees: 'employees.create' };
+const PERMISSION: Record<ImportKind, PermissionKey> = {
+  employees: 'employees.create',
+  'leave-balances': 'leave.manage',
+};
 
 const kindParams = { params: z.object({ kind: z.enum(IMPORT_KINDS) }) };
 

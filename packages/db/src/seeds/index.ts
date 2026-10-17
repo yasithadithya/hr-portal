@@ -1,5 +1,6 @@
 import type { TenantDb } from '../index';
 
+import { leaveSeed } from './leave';
 import { orgSeed } from './org';
 import { rbacSeed } from './rbac';
 
@@ -19,7 +20,7 @@ export interface Seed {
   run: (db: TenantDb, ctx: SeedContext) => Promise<void>;
 }
 
-export const seeds: Seed[] = [rbacSeed, orgSeed];
+export const seeds: Seed[] = [rbacSeed, orgSeed, leaveSeed];
 
 export async function runSeeds(
   db: TenantDb,

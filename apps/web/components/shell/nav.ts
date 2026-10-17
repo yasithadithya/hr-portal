@@ -37,8 +37,8 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/leave',
     label: 'Leave',
     icon: CalendarDays,
-    ready: false,
-    anyOf: ['leave.approve', 'leave.manage'],
+    ready: true,
+    anyOf: ['leave.apply', 'leave.approve', 'leave.manage'],
   },
   {
     href: '/attendance',

@@ -9,6 +9,8 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 15_000 },
   fullyParallel: true,
+  // The whole stack (API, Next, Supabase) runs on the same machine; more workers just thrash it.
+  workers: 2,
   forbidOnly: CI,
   retries: CI ? 1 : 0,
   reporter: CI ? 'github' : 'list',

@@ -36,6 +36,20 @@
       "when": 1792267992336,
       "tag": "0004_employee_core",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792269918881,
+      "tag": "0005_leave",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792269920256,
+      "tag": "0006_leave_ledger_append_only",
+      "breakpoints": true
     }
   ]
 }
