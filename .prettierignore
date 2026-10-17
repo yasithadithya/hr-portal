@@ -1,0 +1,8 @@
+reference/
+pnpm-lock.yaml
+.next/
+dist/
+coverage/
+apps/web/public/sw.js
+**/migrations/meta/
+supabase/

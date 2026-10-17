@@ -1,0 +1,43 @@
+{
+  "name": "hr-portal",
+  "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@hr/api --filter=@hr/web",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @hr/web test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @hr/db db:generate",
+    "tenants:migrate": "node scripts/not-yet.mjs tenants:migrate",
+    "tenant:create": "node scripts/not-yet.mjs tenant:create",
+    "seed:demo": "node scripts/not-yet.mjs seed:demo",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@hr/config": "workspace:*",
+    "eslint": "catalog:",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "supabase": "^2.121.0",
+    "turbo": "^2.11.9",
+    "typescript": "catalog:"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "supabase",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
+}
