@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 import { exportJWK, generateKeyPair, SignJWT, type JSONWebKeySet } from 'jose';
 import { pino } from 'pino';
@@ -12,7 +12,14 @@ import {
   type ControlDb,
 } from '@hr/control-db';
 import { schema as controlSchema } from '@hr/control-db';
-import { connect, loadMigrations, migrate, TENANT_MIGRATIONS_DIR } from '@hr/db';
+import {
+  connect,
+  loadMigrations,
+  migrate,
+  runSeeds,
+  TENANT_MIGRATIONS_DIR,
+  tenantDb,
+} from '@hr/db';
 import { createTestDatabase, dropTestDatabase } from '@hr/db/testing';
 
 import { createApp, type AppOptions } from '../app';
@@ -55,6 +62,10 @@ export async function createHarness(
     const dbUrl = await createTestDatabase(dbName);
     const sql = connect(dbUrl, { max: 2 });
     await migrate(sql, tenantFiles, { table: 'tenant' });
+    // Separate client: drizzle swaps postgres.js serializers, which breaks raw `sql.json` use.
+    const seedSql = connect(dbUrl, { max: 1 });
+    await runSeeds(tenantDb(seedSql));
+    await seedSql.end();
     const [t] = await control
       .insert(controlSchema.tenants)
       .values({ slug, name: `Tenant ${slug.toUpperCase()}`, status: 'active' })
@@ -70,6 +81,16 @@ export async function createHarness(
     tenants[slug] = { id: t!.id, slug, host, dbUrl, sql };
   }
 
+  /** Fake Supabase Auth admin: records invites, returns a fresh auth user id. */
+  const invites: { email: string; redirectTo: string; authUserId: string }[] = [];
+  const authAdmin = () => ({
+    inviteUser: async (email: string, redirectTo: string) => {
+      const authUserId = randomUUID();
+      invites.push({ email, redirectTo, authUserId });
+      return { authUserId };
+    },
+  });
+
   const pools = new PoolManager({ maxPools: 10, connectionsPerPool: 2, idleMs: 60_000 });
   const registry = new TenantRegistry({ control, masterKey, pools });
   const env = loadEnv({ NODE_ENV: 'test', TRUST_PROXY: 'loopback' });
@@ -82,6 +103,7 @@ export async function createHarness(
       pools,
       platformJwksUrl: 'https://platform.supabase.test/auth/v1/.well-known/jwks.json',
       jwks: localJwks(jwks),
+      authAdmin,
     },
     ...extra,
   });
@@ -102,7 +124,60 @@ export async function createHarness(
     await dropTestDatabase(controlName);
   }
 
-  return { app, control, controlSql, registry, pools, tenants, masterKey, sign, close };
+  /** Access token as the tenant's own Supabase project would issue it. */
+  async function tokenFor(slug: string, authUserId: string, extra: Record<string, unknown> = {}) {
+    return sign({
+      sub: authUserId,
+      iss: `https://${slug}.supabase.test/auth/v1`,
+      aal: 'aal1',
+      ...extra,
+    });
+  }
+
+  /** Creates an active app user with the given system/custom role keys; returns ids + token. */
+  async function createUser(
+    slug: string,
+    opts: {
+      email: string;
+      roles: string[];
+      employeeId?: string | null;
+      status?: 'active' | 'invited' | 'disabled';
+    },
+  ) {
+    const t = tenants[slug]!;
+    const authUserId = randomUUID();
+    const [u] = await t.sql`
+      insert into app_users (email, auth_user_id, employee_id, status)
+      values (${opts.email}, ${authUserId}, ${opts.employeeId ?? null}, ${opts.status ?? 'active'})
+      returning id`;
+    for (const key of opts.roles) {
+      await t.sql`insert into user_roles (user_id, role_id) select ${u!.id}, id from roles where key = ${key}`;
+    }
+    return { id: u!.id as string, authUserId, token: await tokenFor(slug, authUserId) };
+  }
+
+  async function createEmployee(slug: string, no: string, reportsToId: string | null = null) {
+    const [e] = await tenants[slug]!.sql`
+      insert into employees (employee_no, first_name, last_name, reports_to_id)
+      values (${no}, ${no}, 'Test', ${reportsToId}) returning id`;
+    return e!.id as string;
+  }
+
+  return {
+    app,
+    control,
+    controlSql,
+    registry,
+    pools,
+    tenants,
+    masterKey,
+    invites,
+    sign,
+    tokenFor,
+    createUser,
+    createEmployee,
+    close,
+  };
 }
 
 export type Harness = Awaited<ReturnType<typeof createHarness>>;

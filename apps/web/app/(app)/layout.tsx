@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { RequireAuth } from '@/components/auth/require-auth';
 import { Brand, SidebarNav } from '@/components/shell/sidebar';
 import { Topbar } from '@/components/shell/topbar';
 
@@ -12,7 +13,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6">
+          <RequireAuth>{children}</RequireAuth>
+        </main>
       </div>
     </div>
   );

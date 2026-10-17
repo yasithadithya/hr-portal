@@ -9,6 +9,7 @@ export { schema };
 export * from './connection';
 export * from './migrator';
 export * from './seeds/index';
+export * from './access/index';
 
 export const TENANT_MIGRATIONS_DIR = fileURLToPath(new URL('../migrations', import.meta.url));
 

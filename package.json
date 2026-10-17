@@ -20,7 +20,8 @@
     "seed:demo": "node -e \"console.log('seed:demo arrives in Phase 10')\"",
     "prepare": "husky",
     "control:migrate": "pnpm --filter @hr/scripts exec tsx src/control-migrate.ts",
-    "dev:setup": "pnpm --filter @hr/scripts exec tsx src/dev-setup.ts && pnpm control:migrate && pnpm tenant:create --slug dev --name \"Dev Company\" --admin-email admin@dev.local --existing-project local --region local --domain localhost --resume"
+    "dev:setup": "pnpm --filter @hr/scripts exec tsx src/dev-setup.ts && pnpm control:migrate && pnpm tenant:create --slug dev --name \"Dev Company\" --admin-email admin@dev.local --existing-project local --region local --domain localhost --resume",
+    "dev:users": "pnpm --filter @hr/scripts exec tsx src/dev-users.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

@@ -45,10 +45,12 @@ export async function verifySupabaseToken(
   token: string,
   jwksUrl: string,
   resolver: JwksResolver = remoteJwks,
+  opts: { issuer?: string | undefined } = {},
 ): Promise<SupabaseClaims> {
   try {
     const { payload } = await jwtVerify(token, resolver(jwksUrl), {
       audience: 'authenticated',
+      ...(opts.issuer ? { issuer: opts.issuer } : {}),
       algorithms: ['ES256', 'RS256', 'EdDSA'],
       clockTolerance: 5,
     });

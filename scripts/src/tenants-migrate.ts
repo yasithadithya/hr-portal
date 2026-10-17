@@ -1,12 +1,12 @@
 import { parseArgs } from 'node:util';
 
-import { migrateTenants } from '@hr/control-db';
-import { loadMigrations, TENANT_MIGRATIONS_DIR } from '@hr/db';
+import { findTenantBySlug, getTenantConnection, migrateTenants } from '@hr/control-db';
+import { connect, loadMigrations, runSeeds, TENANT_MIGRATIONS_DIR, tenantDb } from '@hr/db';
 
 import { log, main, masterKey, openControl } from './lib';
 
 /**
- * pnpm tenants:migrate [--tenant=<slug>] [--dry-run] [--concurrency=N] [--continue-on-error]
+ * pnpm tenants:migrate [--tenant=<slug>] [--dry-run] [--concurrency=N] [--continue-on-error] [--skip-seeds]
  * Applies packages/db migrations to every active tenant (CLAUDE.md Hard Rule 12).
  */
 await main(async () => {
@@ -16,6 +16,7 @@ await main(async () => {
       'dry-run': { type: 'boolean', default: false },
       concurrency: { type: 'string', default: '1' },
       'continue-on-error': { type: 'boolean', default: false },
+      'skip-seeds': { type: 'boolean', default: false },
     },
   });
   const { sql, db } = openControl();
@@ -45,6 +46,20 @@ await main(async () => {
       log(
         `${r.status === 'failed' ? '✖' : r.status === 'skipped' ? '…' : '✔'} ${r.slug}: ${detail}`,
       );
+    }
+    // Seeds are idempotent and keep system data (e.g. system roles) in line with code.
+    if (!values['dry-run'] && !values['skip-seeds']) {
+      for (const r of results.filter((x) => x.status === 'ok')) {
+        const tenant = (await findTenantBySlug(db, r.slug))!;
+        const conn = await getTenantConnection(db, tenant, masterKey());
+        const tsql = connect(conn.dbDirectUrl, { max: 1 });
+        try {
+          await runSeeds(tenantDb(tsql));
+          log(`✔ ${r.slug}: seeds up to date`);
+        } finally {
+          await tsql.end();
+        }
+      }
     }
     return results.some((r) => r.status !== 'ok') ? 1 : 0;
   } finally {

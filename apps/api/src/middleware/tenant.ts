@@ -1,15 +1,27 @@
 import type { RequestHandler } from 'express';
 
+import type { TenantConnection } from '@hr/control-db';
+
 import '../context';
+import { supabaseAuthAdmin, type AuthAdmin } from '../lib/authAdmin';
 import { AppError } from '../lib/errors';
 import type { TenantRegistry } from '../tenancy/registry';
+
+export type AuthAdminFactory = (conn: TenantConnection) => AuthAdmin;
+
+const defaultAuthAdmin: AuthAdminFactory = (conn) =>
+  supabaseAuthAdmin(conn.supabaseUrl, conn.serviceRoleKey);
 
 /**
  * Resolves the tenant from the request host before anything else (CLAUDE.md Hard Rule 4).
  * `req.hostname` honours X-Forwarded-Host when `trust proxy` is set; the web app proxies `/api/*`
  * so the browser's host (acme.hrportal.lk) is what we see. Unknown host → 404 before auth.
  */
-export function tenantMiddleware(registry: TenantRegistry): RequestHandler {
+export function tenantMiddleware(
+  registry: TenantRegistry,
+  opts: { authAdmin?: AuthAdminFactory | undefined } = {},
+): RequestHandler {
+  const authAdminFactory = opts.authAdmin ?? defaultAuthAdmin;
   return async (req, _res, next) => {
     const resolved = await registry.resolve(req.hostname ?? '');
     if (
@@ -23,10 +35,19 @@ export function tenantMiddleware(registry: TenantRegistry): RequestHandler {
       throw new AppError(403, 'FORBIDDEN', 'This workspace is suspended. Contact support.');
     }
     const { supabaseUrl, anonKey, jwksUrl } = resolved.connection;
+    let admin: AuthAdmin | undefined;
     req.ctx = {
       tenant: resolved.tenant,
       db: registry.db(resolved),
       supabase: { url: supabaseUrl, anonKey, jwksUrl },
+      authAdmin: () => (admin ??= authAdminFactory(resolved.connection)),
+      permissions: {},
+      actor: {
+        userId: null,
+        ip: req.ip ?? null,
+        userAgent: req.get('user-agent') ?? null,
+        requestId: typeof req.id === 'string' ? req.id : null,
+      },
     };
     next();
   };

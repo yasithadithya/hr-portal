@@ -4,6 +4,10 @@ const CI = !!process.env.CI;
 
 export default defineConfig({
   testDir: './e2e',
+  // Ensures the local demo users exist (owner@dev.local etc.); local Supabase only.
+  globalSetup: './e2e/global-setup.ts',
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
   fullyParallel: true,
   forbidOnly: CI,
   retries: CI ? 1 : 0,

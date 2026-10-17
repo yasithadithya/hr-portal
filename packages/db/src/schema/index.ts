@@ -2,3 +2,6 @@
 // Every table must call `.enableRLS()` with no policies (CLAUDE.md Hard Rule 5); a test enforces it.
 export * from './columns';
 export * from './settings';
+export * from './employees';
+export * from './auth';
+export * from './audit';

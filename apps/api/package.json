@@ -15,6 +15,7 @@
     "@hr/control-db": "workspace:*",
     "@hr/db": "workspace:*",
     "@hr/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.118.0",
     "cors": "^2.8.6",
     "drizzle-orm": "catalog:",
     "express": "^5.3.0",

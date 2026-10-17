@@ -1,26 +1,32 @@
 import { expect, test } from '@playwright/test';
 
-test('app shell renders and reaches the API', async ({ page }) => {
+import { login, openNav } from './helpers';
+
+test('signed-out visitors are sent to the workspace login page', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-  await expect(page.getByTestId('api-health')).toHaveAttribute('data-state', 'ok');
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByTestId('tenant-name')).toHaveText('Dev Company');
 });
 
-test('theme can be switched to dark', async ({ page }) => {
-  await page.goto('/');
+test('app shell renders, reaches the API, and switches theme', async ({ page }) => {
+  await login(page, 'employee@dev.local');
+  await expect(page.getByTestId('api-health')).toHaveAttribute('data-state', 'ok');
   await page.getByRole('button', { name: 'Change theme' }).click();
   await page.getByRole('menuitem', { name: 'Dark' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 });
 
 test('navigation reaches the self-service area', async ({ page, isMobile }) => {
-  await page.goto('/');
-  if (isMobile) await page.getByRole('button', { name: 'Open menu' }).click();
+  await login(page, 'employee@dev.local');
+  await openNav(page, isMobile);
   await page.getByRole('link', { name: 'My HR' }).click();
   await expect(page.getByRole('heading', { name: 'My HR' })).toBeVisible();
 });
 
-test('resolves the workspace from the browser host through the /api proxy', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByTestId('tenant-name').first()).toHaveText('Dev Company');
+test('wrong password shows a clear error', async ({ page }) => {
+  await page.goto('/login');
+  await page.locator('#email').fill('employee@dev.local');
+  await page.locator('#password').fill('nope-nope-nope');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByText('Wrong email or password')).toBeVisible();
 });

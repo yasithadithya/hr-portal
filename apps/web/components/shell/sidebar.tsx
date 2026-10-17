@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { useAuth } from '@/lib/auth';
 import { usePublicTenant } from '@/lib/tenant';
 import { cn } from '@/lib/utils';
 
@@ -10,10 +11,12 @@ import { NAV_ITEMS } from './nav';
 
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { can } = useAuth();
+  const items = NAV_ITEMS.filter((i) => !i.anyOf || i.anyOf.some((k) => can(k)));
 
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 p-3">
-      {NAV_ITEMS.map(({ href, label, icon: Icon, ready }) => {
+      {items.map(({ href, label, icon: Icon, ready }) => {
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
         const classes = cn(
           'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',

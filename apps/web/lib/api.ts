@@ -22,6 +22,12 @@ export class ApiError extends Error {
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
+/** Set by AuthProvider: returns the current access token (refreshing if needed). */
+let tokenProvider: () => Promise<string | null> = async () => null;
+export function setTokenProvider(fn: () => Promise<string | null>): void {
+  tokenProvider = fn;
+}
+
 interface RequestOptions {
   body?: unknown;
   signal?: AbortSignal;
@@ -39,12 +45,14 @@ export async function apiRequest<T extends z.ZodType>(
   { body, signal, headers }: RequestOptions = {},
 ): Promise<z.infer<T>> {
   let res: Response;
+  const token = await tokenProvider();
   try {
     res = await fetch(`${API_URL}${path}`, {
       method,
       signal,
       headers: {
         accept: 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
         ...headers,
       },

@@ -6,13 +6,19 @@ import type { ControlDb } from '@hr/control-db';
 
 import type { Env } from './env';
 import type { JwksResolver } from './lib/jwt';
+import { authenticate } from './middleware/auth';
 import { allowlistOrigins, corsMiddleware, type OriginCheck } from './middleware/cors';
 import { errorHandler, notFound } from './middleware/errors';
 import { requestLogger } from './middleware/requestLogger';
-import { tenantMiddleware } from './middleware/tenant';
+import { tenantMiddleware, type AuthAdminFactory } from './middleware/tenant';
+import { auditRoutes } from './modules/audit/routes';
+import { employeeRoutes } from './modules/employees/routes';
 import { healthRoutes } from './modules/health/routes';
+import { meRoutes } from './modules/me/routes';
 import { platformRoutes } from './modules/platform/routes';
 import { publicRoutes } from './modules/public/routes';
+import { roleRoutes } from './modules/roles/routes';
+import { userRoutes } from './modules/users/routes';
 import type { PoolManager } from './tenancy/pools';
 import type { TenantRegistry } from './tenancy/registry';
 
@@ -23,6 +29,8 @@ export interface TenancyDeps {
   platformJwksUrl: string | null;
   /** Tests inject a local key set; production fetches each project's JWKS. */
   jwks?: JwksResolver;
+  /** Tests inject a fake Supabase Auth admin (invites). */
+  authAdmin?: AuthAdminFactory;
 }
 
 export interface AppOptions {
@@ -31,7 +39,9 @@ export interface AppOptions {
   version?: string;
   isOriginAllowed?: OriginCheck;
   tenancy?: TenancyDeps;
-  /** Extra tenant-scoped routes under /api/v1 (tests). */
+  /** Extra tenant-scoped, unauthenticated routes under /api/v1 (tests). */
+  mountTenantPublic?: (router: Router) => void;
+  /** Extra tenant-scoped, authenticated routes under /api/v1 (tests). */
   mountTenant?: (router: Router) => void;
   /** Extra routes mounted before the 404 handler (tests). */
   mount?: (app: Express) => void;
@@ -43,6 +53,7 @@ export function createApp({
   version = '0.0.0',
   isOriginAllowed,
   tenancy,
+  mountTenantPublic,
   mountTenant,
   mount,
 }: AppOptions) {
@@ -71,8 +82,17 @@ export function createApp({
 
     // Everything under /api/v1 is tenant-scoped: unknown host → 404 before auth.
     const api = Router();
-    api.use(tenantMiddleware(tenancy.registry));
+    api.use(tenantMiddleware(tenancy.registry, { authAdmin: tenancy.authAdmin }));
     api.use(publicRoutes());
+    mountTenantPublic?.(api);
+
+    // Everything below requires a signed-in user of this workspace.
+    api.use(authenticate({ jwks: tenancy.jwks }));
+    api.use(meRoutes());
+    api.use(userRoutes());
+    api.use(roleRoutes());
+    api.use(auditRoutes());
+    api.use(employeeRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

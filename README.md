@@ -19,8 +19,11 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 pnpm supabase start -x realtime,logflare,vector,imgproxy,edge-runtime,supavisor,studio,postgres-meta
 pnpm dev:setup             # writes .env, migrates the control plane, provisions the "dev" tenant
+pnpm dev:users             # demo users: owner@dev.local, hr@, payroll@, manager@, employee@ (Password123!)
 pnpm dev                   # API on :4000, web on :3000 → open http://localhost:3000
 ```
+
+Invite/reset emails go to the local Mailpit inbox at http://127.0.0.1:54324.
 
 Local Supabase acts as both the control plane (schema `platform`) and the `dev` tenant (schema `public`).
 

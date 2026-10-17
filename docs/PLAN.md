@@ -137,7 +137,7 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 - [~] Configures Auth via Management API: site URL `https://<slug>.hrportal.lk`, redirect URLs, disable signups, SMTP (shared sender), email templates (invite/reset with tenant name) — printed as a manual checklist and logged as `skipped` until a Management API token exists
 - [x] Creates private storage buckets: `employee-documents`, `employee-photos`, `payslips`, `imports`
 - [x] Runs all tenant migrations, then SL default seeds (Phase 3/5/7 seeds register themselves into a seed registry)
-- [ ] Invites first Owner user (Phase 2 fills in the `invite-owner` step)
+- [x] Invites first Owner user
 - [x] Every step idempotent and logged to `provisioning_events`; `--resume` continues a failed run
 
 ### Migration fan-out (`scripts/tenants-migrate.ts`)
@@ -169,12 +169,12 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 `employees.{read,create,update,archive}`, `org.manage`, `documents.{read,manage}`, `leave.{read,apply,approve,manage}`, `attendance.{read,clock,regularize,approve,manage}`, `payroll.{read,run,approve,lock,configure}`, `payslips.read`, `settings.manage`, `users.manage`, `reports.read`, `audit.read`.
 
 ### Work
-- [ ] JWT verification middleware (tenant JWKS, cached), loads `app_users` + effective permissions into `req.ctx`
-- [ ] `requirePermission('leave.approve')` + `scopeFilter(ctx, 'leave.read')` helper that returns a Drizzle `where` for self/team/all (team = recursive `reports_to` subtree)
-- [ ] Repository helper `withAudit(ctx, entity, fn)` used by all writes
-- [ ] Invite flow (HR invites → Supabase invite email → set password → first login links `app_users`)
-- [ ] Web: login, magic link, forgot/reset password, accept invite, MFA enrol (if enabled), route guards from permissions, 403 page
-- [ ] Users & roles admin screens; custom roles allowed (copy a system role then edit)
+- [x] JWT verification middleware (tenant JWKS, cached), loads `app_users` + effective permissions into `req.ctx`
+- [x] `requirePermission('leave.approve')` + `scopeFilter(ctx, 'leave.read')` helper that returns a Drizzle `where` for self/team/all (team = recursive `reports_to` subtree)
+- [x] Repository helper `withAudit(ctx, entity, fn)` used by all writes
+- [x] Invite flow (HR invites → Supabase invite email → set password → first login links `app_users`)
+- [x] Web: login, magic link, forgot/reset password, accept invite, MFA enrol (if enabled), route guards from permissions, 403 page
+- [x] Users & roles admin screens; custom roles allowed (copy a system role then edit) — plus an audit-log viewer
 
 **Done when:** e2e: owner invites HR admin → HR admin logs in → sees only permitted menus; API IDOR tests for self/team/all pass; every write appears in audit log.
 
@@ -449,3 +449,14 @@ _(Claude Code appends dated decisions here.)_
 - **Env:** a single repo-root `.env` serves `apps/api` and `scripts/` (loaded with `process.loadEnvFile`). `pnpm dev:setup` fills it from local Supabase and provisions the `dev` tenant (domains `localhost`, `dev.localhost`). Node ≥ 22 is now required (`process.loadEnvFile`, `.nvmrc` 22).
 - **Postgres URL hygiene:** Prisma's `?pgbouncer=true` is stripped automatically. Passwords with `@`/`!` must be URL-encoded (`%40`/`%21`).
 - **Tests:** integration tests create throwaway `hr_test_*` databases on local Postgres (`TEST_DATABASE_URL`, default local Supabase; CI uses a `postgres:17` service).
+
+### 2026-10-18 — Phase 2
+- **A minimal `employees` table arrived early** (no, names, reports_to, status), so that `team` scope and the IDOR tests run on real data. Phase 4 extends it with a new migration. `GET /employees[/:id]` exists as a scoped read; out-of-scope rows return 404 exactly like missing ones (no ID oracle).
+- **Permission catalogue + system roles live in `@hr/shared/permissions`** (one source for API, seeds and UI). Each permission declares which scopes make sense (e.g. `attendance.clock` is self-only, `payroll.*` all-only), and Zod rejects anything else. The RBAC seed upserts system roles idempotently and **`tenants:migrate` now re-runs seeds** (`--skip-seeds` to opt out), so role changes reach every client.
+- **Default role design (verify with pilot client):** owner = everything; hr_admin = HR, leave, attendance, users, settings, audit, but **no payroll**; payroll_admin = payroll **without `payroll.approve`** (maker-checker by default); manager = team scope for employees/leave/attendance plus own self-service; employee = self only.
+- **Escalation guards:** you can only grant (or edit a user/role holding) permissions and scopes you hold yourself, so only owners mint owners. Nobody can disable themselves or change their own roles. The last active owner can't be disabled or demoted (409).
+- **Auth checks:** JWKS signature + `aud=authenticated` + **issuer = the tenant's own project** (`<supabaseUrl>/auth/v1`), so another tenant's token fails even if keys were shared, plus an `app_users` row (403 otherwise). The first request activates invited users. MFA: setting `security.mfa_required` → non-`aal2` sessions get `MFA_REQUIRED`; the web app sends them to TOTP enrol/verify.
+- **audit_log is append-only via triggers** (UPDATE/DELETE/TRUNCATE raise for every role, including the owner), with REVOKE for Supabase browser roles. `withAudit` writes the change and its audit row in one transaction and redacts `password|secret|token` keys. Audit pagination is keyset on `(at, id)` with the cursor = last row id, compared in SQL (JS ms timestamps would skip µs-precision rows).
+- **Gotcha:** drizzle's postgres-js driver mutates the client's serializers, so never share one `postgres()` client between drizzle and raw `sql.json(...)`.
+- **Web auth:** supabase-js per tenant project (URL/anon key from `/public/tenant`), `flowType: 'implicit'` so invite/recovery/magic links work across devices, and the session token is attached to API calls. `safeNext()` blocks open redirects. Local `supabase/config.toml`: redirect URLs for `localhost`/`*.localhost`, TOTP enabled, and email/sign-in rate limits raised **for local dev only** (production limits are set per project).
+- **Dev data:** `pnpm dev:users` (local only) creates owner/hr/payroll/manager/employee users with password `Password123!`. Playwright's globalSetup runs it, and e2e reads invite emails from local Mailpit.

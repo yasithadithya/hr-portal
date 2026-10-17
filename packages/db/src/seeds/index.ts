@@ -1,5 +1,7 @@
 import type { TenantDb } from '../index';
 
+import { rbacSeed } from './rbac';
+
 /**
  * Default-data seeds for a new tenant (Sri Lanka defaults, all editable, flagged `verify`).
  * Each seed must be idempotent: provisioning may re-run it with `--resume`.
@@ -11,7 +13,7 @@ export interface Seed {
   run: (db: TenantDb) => Promise<void>;
 }
 
-export const seeds: Seed[] = [];
+export const seeds: Seed[] = [rbacSeed];
 
 export async function runSeeds(db: TenantDb, log: (msg: string) => void = () => {}) {
   for (const seed of seeds) {

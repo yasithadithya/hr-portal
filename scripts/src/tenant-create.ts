@@ -172,7 +172,42 @@ const steps: Step[] = [
   },
   {
     key: 'invite-owner',
-    run: async () => ({ status: 'skipped', payload: { reason: 'invites arrive in Phase 2' } }),
+    run: async ({ db, key, tenant, args }) => {
+      const conn = await getTenantConnection(db, tenant, key);
+      if (!conn.supabaseUrl || !conn.serviceRoleKey) {
+        return { status: 'skipped', payload: { reason: 'no Supabase URL / service-role key' } };
+      }
+      const sql = connect(conn.dbDirectUrl, { max: 1 });
+      try {
+        const email = args.adminEmail.toLowerCase();
+        const [existing] = await sql`select id from app_users where email = ${email}`;
+        if (existing) return { status: 'skipped', payload: { reason: 'owner already exists' } };
+
+        const supabase = createClient(conn.supabaseUrl, conn.serviceRoleKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const host = `${args.slug}.${optionalEnv('PLATFORM_BASE_DOMAIN') ?? 'hrportal.lk'}`;
+        const redirectTo = optionalEnv('INVITE_REDIRECT_BASE')
+          ? `${optionalEnv('INVITE_REDIRECT_BASE')}/auth/accept`
+          : `https://${host}/auth/accept`;
+        const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, { redirectTo });
+        if (error || !data.user) throw new Error(`Invite failed: ${error?.message ?? 'unknown'}`);
+
+        await sql.begin(async (tx) => {
+          const [u] = await tx`
+            insert into app_users (email, auth_user_id, status, invited_at)
+            values (${email}, ${data.user.id}, 'invited', now()) returning id`;
+          await tx`
+            insert into user_roles (user_id, role_id) select ${u!.id}, id from roles where key = 'owner'`;
+          await tx`
+            insert into audit_log (action, entity, entity_id, after)
+            values ('invite', 'app_users', ${u!.id}, ${tx.json({ email, role: 'owner', via: 'provisioning' })})`;
+        });
+        return { status: 'succeeded', payload: { email, redirectTo } };
+      } finally {
+        await sql.end();
+      }
+    },
   },
   {
     key: 'activate',

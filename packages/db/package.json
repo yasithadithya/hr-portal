@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
-    "postgres": "catalog:"
+    "postgres": "catalog:",
+    "@hr/shared": "workspace:*"
   },
   "devDependencies": {
     "@hr/config": "workspace:*",

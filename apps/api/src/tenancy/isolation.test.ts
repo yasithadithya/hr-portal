@@ -13,7 +13,7 @@ let h: Harness;
 
 beforeAll(async () => {
   h = await createHarness('iso', ['a', 'b', 'c'], {
-    mountTenant: (router) => {
+    mountTenantPublic: (router) => {
       // A tenant-scoped route that reads whatever is in req.ctx.db.
       router.get('/_test/company', async (req, res) => {
         const rows = await ctxOf(req).db.select().from(schema.settings);
