@@ -45,12 +45,13 @@ export const failureSchema = z.object({
   error: errorBodySchema,
 });
 
+export function successSchema<T extends z.ZodType>(data: T) {
+  return z.object({ success: z.literal(true), data });
+}
+
 /** Builds a schema that parses `{ success: true, data } | { success: false, error }`. */
 export function envelopeSchema<T extends z.ZodType>(data: T) {
-  return z.discriminatedUnion('success', [
-    z.object({ success: z.literal(true), data }),
-    failureSchema,
-  ]);
+  return z.discriminatedUnion('success', [successSchema(data), failureSchema]);
 }
 
 export function ok<T>(data: T): ApiSuccess<T> {

@@ -33,7 +33,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     plugins: { 'import-x': importX },
-    settings: { 'import-x/internal-regex': '^@hr/' },
+    settings: { 'import-x/internal-regex': '^(@hr/|@/)' },
     languageOptions: {
       globals: { ...globals.node },
     },
@@ -71,11 +71,12 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.browser },
     },
-    settings: { next: { rootDir: 'apps/web' } },
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
       ...reactHooks.configs.recommended.rules,
+      // App Router only; this rule looks for a pages/ directory.
+      '@next/next/no-html-link-for-pages': 'off',
     },
   },
 );
