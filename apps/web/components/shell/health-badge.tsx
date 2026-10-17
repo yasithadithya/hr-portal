@@ -9,7 +9,7 @@ import { healthSchema } from '@hr/shared';
 export function HealthBadge() {
   const { data, isPending, isError } = useQuery({
     queryKey: ['health'],
-    queryFn: ({ signal }) => api.get('/health', healthSchema, { signal }),
+    queryFn: ({ signal }) => api.get('/healthz', healthSchema, { signal }),
     refetchInterval: 30_000,
   });
 

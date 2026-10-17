@@ -19,3 +19,8 @@ test('navigation reaches the self-service area', async ({ page, isMobile }) => {
   await page.getByRole('link', { name: 'My HR' }).click();
   await expect(page.getByRole('heading', { name: 'My HR' })).toBeVisible();
 });
+
+test('resolves the workspace from the browser host through the /api proxy', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('tenant-name').first()).toHaveText('Dev Company');
+});

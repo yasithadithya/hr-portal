@@ -21,7 +21,7 @@ export default defineConfig({
       command: 'pnpm --filter @hr/api dev',
       url: 'http://localhost:4000/health',
       reuseExistingServer: !CI,
-      env: { CORS_ORIGINS: 'http://localhost:3000', LOG_LEVEL: 'warn' },
+      env: { LOG_LEVEL: 'warn' },
     },
     {
       // Production build: dev-mode compiles on first visit are too slow for stable timeouts.

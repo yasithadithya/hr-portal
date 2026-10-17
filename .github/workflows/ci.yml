@@ -13,6 +13,17 @@ jobs:
   check:
     name: Typecheck · Lint · Test
     runs-on: ubuntu-latest
+    services:
+      # Throwaway Postgres for integration tests (tenant isolation, migrations, fan-out).
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,6 +36,11 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      # Proves every committed migration applies cleanly to a fresh database (PLAN.md Phase 1).
+      - name: Migrations apply to a fresh DB
+        run: pnpm control:migrate && pnpm control:migrate --dry-run
+        env:
+          CONTROL_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
   e2e:
     name: E2E (Playwright)
@@ -41,9 +57,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @hr/web exec playwright install --with-deps chromium
+      # E2E needs the full local Supabase stack (control plane + dev tenant).
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start -x realtime,logflare,vector,imgproxy,edge-runtime,supavisor,studio,postgres-meta
+      - run: pnpm dev:setup
       - run: pnpm test:e2e
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

@@ -4,20 +4,25 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsup",
-    "start": "node --env-file-if-exists=.env dist/server.js",
+    "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {
+    "@hr/control-db": "workspace:*",
+    "@hr/db": "workspace:*",
     "@hr/shared": "workspace:*",
     "cors": "^2.8.6",
+    "drizzle-orm": "catalog:",
     "express": "^5.3.0",
     "helmet": "^8.3.0",
+    "jose": "^6.2.12",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
+    "postgres": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

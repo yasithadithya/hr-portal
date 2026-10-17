@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 import { failureSchema, successSchema, type ErrorCode } from '@hr/shared/envelope';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+// Same-origin: Next rewrites /api/* to the Express API (see next.config.ts).
+const API_URL = '';
 
 const successEnvelope = successSchema(z.unknown());
 

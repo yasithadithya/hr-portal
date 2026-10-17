@@ -132,23 +132,23 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 - `provisioning_events(id, tenant_id, step, status, payload, at)`
 
 ### Provisioning script (`scripts/tenant-create.ts`)
-- [ ] Calls Supabase **Management API** (`SUPABASE_ACCESS_TOKEN`, org id) to create project in ap-southeast-1 with a generated DB password
-- [ ] Polls until healthy; fetches API keys; stores encrypted secrets
-- [ ] Configures Auth via Management API: site URL `https://<slug>.hrportal.lk`, redirect URLs, disable signups, SMTP (shared sender), email templates (invite/reset with tenant name)
-- [ ] Creates private storage buckets: `employee-documents`, `employee-photos`, `payslips`, `imports`
-- [ ] Runs all tenant migrations, then SL default seeds (Phase 3/5/7 seeds register themselves into a seed registry)
-- [ ] Invites first Owner user
-- [ ] Every step idempotent and logged to `provisioning_events`; `--resume` continues a failed run
+- [~] Calls Supabase **Management API** (`SUPABASE_ACCESS_TOKEN`, org id) to create project in ap-southeast-1 with a generated DB password — v1 registers an existing project (`--existing-project <ref>`, credentials from env); auto-create waits for a token
+- [~] Polls until healthy; fetches API keys; stores encrypted secrets — secrets stored encrypted (AES-256-GCM); polling/fetching comes with auto-create
+- [~] Configures Auth via Management API: site URL `https://<slug>.hrportal.lk`, redirect URLs, disable signups, SMTP (shared sender), email templates (invite/reset with tenant name) — printed as a manual checklist and logged as `skipped` until a Management API token exists
+- [x] Creates private storage buckets: `employee-documents`, `employee-photos`, `payslips`, `imports`
+- [x] Runs all tenant migrations, then SL default seeds (Phase 3/5/7 seeds register themselves into a seed registry)
+- [ ] Invites first Owner user (Phase 2 fills in the `invite-owner` step)
+- [x] Every step idempotent and logged to `provisioning_events`; `--resume` continues a failed run
 
 ### Migration fan-out (`scripts/tenants-migrate.ts`)
-- [ ] Applies `packages/db` migrations to each active tenant sequentially (or with `--concurrency=N`), records per-tenant status, stops on first failure unless `--continue-on-error`
-- [ ] `--dry-run` prints pending migrations per tenant
-- [ ] CI job runs migrations against a throwaway tenant DB to catch broken SQL
+- [x] Applies `packages/db` migrations to each active tenant sequentially (or with `--concurrency=N`), records per-tenant status, stops on first failure unless `--continue-on-error`
+- [x] `--dry-run` prints pending migrations per tenant
+- [x] CI job runs migrations against a throwaway tenant DB to catch broken SQL
 
 ### API plumbing
-- [ ] `tenantMiddleware` (host → tenant, cached), per-tenant pool manager with LRU + idle timeout + metrics
-- [ ] `GET /api/v1/public/tenant` (branding + Supabase public config)
-- [ ] Platform admin API (protected by separate platform auth): list tenants, suspend/activate, view provisioning & migration status
+- [x] `tenantMiddleware` (host → tenant, cached), per-tenant pool manager with LRU + idle timeout + metrics
+- [x] `GET /api/v1/public/tenant` (branding + Supabase public config)
+- [x] Platform admin API (protected by separate platform auth): list tenants, suspend/activate, view provisioning & migration status
 
 **Done when:** creating two tenants locally/staging gives two isolated DBs; a request to `a.localhost` can never return data from `b`; a new migration reaches both via one command. Integration test proves cross-tenant isolation.
 
@@ -437,3 +437,15 @@ _(Claude Code appends dated decisions here.)_
 - **PWA:** `@serwist/turbopack` (Next 16 builds with Turbopack), with the SW served from the route `/serwist/sw.js` and disabled in dev.
 - **E2E** runs against a production web build. Cold dev-mode compiles were too slow for stable timeouts.
 - **Local Supabase** has public signup disabled (invite-only, per §1 Auth).
+
+### 2026-10-18 — Phase 1
+- **Topology (user decision):** the remote Supabase project `nfxwtzmpgwvysydckmyf` (Tokyo) is the control plane **and** the dev/staging tenant, like local `supabase start`. Tokyo is for dev only; client projects go to ap-southeast-1. Control-plane tables live in Postgres schema `platform`, tenant tables in `public`, so one DB can hold both.
+- **Provisioning (user decision):** `tenant:create --existing-project <ref>` registers a project made in the dashboard. Credentials come from env (`TENANT_*`), never CLI args. Management API auto-create and auth-config are deferred until a token exists; they are logged as `skipped`, and the script prints a manual checklist.
+- **Own migrator** instead of drizzle's: it reads drizzle-kit's journal, stores a SHA-256 per file in `hr_migrations.{control,tenant}`, refuses to run if an applied file changed or vanished, and runs each file in a transaction holding `pg_advisory_xact_lock` (safe through transaction poolers; a race test proved this was needed).
+- **`tenant_secrets.db_direct_url_enc`** was added next to `db_url_enc`. The runtime uses the transaction pooler (:6543); migrations use the session pooler/direct (:5432).
+- **Tenant resolution through the web origin:** Next rewrites `/api/*` → Express, and Express (`trust proxy`) reads X-Forwarded-Host. So the tenant = the host the browser is on, there's no cross-origin call, and CORS is only a fallback. Verified: an unknown host via the proxy returns `TENANT_NOT_FOUND`.
+- **Status semantics:** `provisioning`/`archived` → 404 (unknown workspace); `suspended` → 403. Host lookups are cached 60 s, negative lookups 10 s; the platform status change invalidates the cache and closes the pool.
+- **Platform admin auth:** an ES256/RS256 JWT from the control-plane Supabase project (JWKS via `jose`), plus the email listed in `platform.platform_admins`. The same verifier is reused for tenant auth in Phase 2.
+- **Env:** a single repo-root `.env` serves `apps/api` and `scripts/` (loaded with `process.loadEnvFile`). `pnpm dev:setup` fills it from local Supabase and provisions the `dev` tenant (domains `localhost`, `dev.localhost`). Node ≥ 22 is now required (`process.loadEnvFile`, `.nvmrc` 22).
+- **Postgres URL hygiene:** Prisma's `?pgbouncer=true` is stripped automatically. Passwords with `@`/`!` must be URL-encoded (`%40`/`%21`).
+- **Tests:** integration tests create throwaway `hr_test_*` databases on local Postgres (`TEST_DATABASE_URL`, default local Supabase; CI uses a `postgres:17` service).

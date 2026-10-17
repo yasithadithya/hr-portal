@@ -13,6 +13,21 @@ const envSchema = z.object({
         .map((o) => o.trim())
         .filter(Boolean),
     ),
+  /** Express `trust proxy`: the web app (and any load balancer) forwards X-Forwarded-Host. */
+  TRUST_PROXY: z.string().default('loopback'),
+  /** Control-plane Postgres (runtime: transaction pooler URL). Required outside tests. */
+  CONTROL_DATABASE_URL: z.string().optional(),
+  /** 32 bytes, base64. Decrypts tenant secrets. */
+  MASTER_KEY: z.string().optional(),
+  /** Control-plane Supabase project URL; platform admins authenticate against its Auth. */
+  CONTROL_SUPABASE_URL: z.string().optional(),
+  TENANT_MAX_POOLS: z.coerce.number().int().positive().default(50),
+  TENANT_POOL_SIZE: z.coerce.number().int().positive().default(5),
+  TENANT_POOL_IDLE_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10 * 60_000),
 });
 
 export type Env = z.infer<typeof envSchema>;

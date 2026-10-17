@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { usePublicTenant } from '@/lib/tenant';
 import { cn } from '@/lib/utils';
 
 import { NAV_ITEMS } from './nav';
@@ -42,9 +43,13 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function Brand() {
+  const { data: tenant } = usePublicTenant();
   return (
-    <div className="flex h-14 items-center px-6 text-base font-semibold tracking-tight">
-      HR Portal
+    <div
+      className="flex h-14 items-center truncate px-6 text-base font-semibold tracking-tight"
+      data-testid="tenant-name"
+    >
+      {tenant?.name ?? 'HR Portal'}
     </div>
   );
 }

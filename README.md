@@ -17,11 +17,30 @@ Multi-client HR portal (Core HR, Leave, Attendance, Sri Lanka payroll, self-serv
 pnpm install
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
-pnpm supabase start        # local Postgres/Auth/Storage in Docker (prints URLs and keys)
-pnpm dev                   # API on :4000, web on :3000
+pnpm supabase start -x realtime,logflare,vector,imgproxy,edge-runtime,supavisor,studio,postgres-meta
+pnpm dev:setup             # writes .env, migrates the control plane, provisions the "dev" tenant
+pnpm dev                   # API on :4000, web on :3000 → open http://localhost:3000
 ```
 
-The local Supabase instance is both the "platform" (control plane) and a single dev tenant until Phase 1 adds provisioning.
+Local Supabase acts as both the control plane (schema `platform`) and the `dev` tenant (schema `public`).
+
+### Using the remote Supabase project (control plane + dev tenant)
+
+Put these in the repo-root `.env` (never commit it). URL-encode special characters in the password (`@` → `%40`, `!` → `%21`):
+
+```sh
+CONTROL_DATABASE_URL=postgresql://postgres.<ref>:<pw>@aws-0-<region>.pooler.supabase.com:6543/postgres
+CONTROL_DATABASE_DIRECT_URL=postgresql://postgres.<ref>:<pw>@aws-0-<region>.pooler.supabase.com:5432/postgres
+CONTROL_SUPABASE_URL=https://<ref>.supabase.co
+MASTER_KEY=<openssl rand -base64 32>      # back this up; losing it makes tenant secrets unreadable
+TENANT_DB_URL=<same as CONTROL_DATABASE_URL>
+TENANT_DB_DIRECT_URL=<same as CONTROL_DATABASE_DIRECT_URL>
+TENANT_SUPABASE_URL=https://<ref>.supabase.co
+TENANT_ANON_KEY=<anon key>
+TENANT_SERVICE_ROLE_KEY=<service role key>
+```
+
+Then `pnpm control:migrate` and `pnpm tenant:create --slug <slug> --name "<Company>" --admin-email <email> --existing-project <ref>`.
 
 ## Commands
 

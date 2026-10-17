@@ -1,4 +1,4 @@
 {
   "extends": "@hr/config/tsconfig.node.json",
-  "include": ["src", "drizzle.config.ts"]
+  "include": ["src", "drizzle.config.ts", "vitest.config.ts"]
 }

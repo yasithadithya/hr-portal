@@ -11,9 +11,10 @@
     "db:generate": "drizzle-kit generate",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
   },
   "dependencies": {
+    "@hr/db": "workspace:*",
     "drizzle-orm": "catalog:",
     "postgres": "catalog:"
   },
