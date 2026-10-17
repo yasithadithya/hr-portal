@@ -101,15 +101,15 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 
 **Goal:** an empty but production-shaped monorepo where every later phase just adds modules.
 
-- [ ] pnpm + Turborepo workspace with packages listed in §2; strict TS everywhere
-- [ ] ESLint + Prettier + lint-staged + husky; commitlint (conventional commits)
-- [ ] `apps/api`: Express 5, helmet, cors (tenant-aware origin check), pino-http with request id, Zod validation middleware, error handler producing the standard envelope, `/health`
-- [ ] `apps/web`: Next.js App Router, Tailwind, shadcn/ui, TanStack Query, API client generated from `packages/shared` schemas (typed fetch wrapper), app shell with sidebar/topbar, light/dark
-- [ ] Serwist PWA set-up (manifest, icons placeholder, offline fallback page)
-- [ ] `packages/shared`: `time` (tenant-tz helpers: `today(tz)`, `isWeekend(date, workWeek)`, `eachDay(start,end)`), `money` (decimal.js wrapper, `round(value, mode, scale)`), envelope types
-- [ ] Vitest in all packages; Playwright skeleton in `apps/web`
-- [ ] GitHub Actions: install → typecheck → lint → test on PR
-- [ ] `.env.example` for api/web; local dev uses Supabase CLI (`supabase start`) as both "platform" and one "dev tenant"
+- [x] pnpm + Turborepo workspace with packages listed in §2; strict TS everywhere
+- [x] ESLint + Prettier + lint-staged + husky; commitlint (conventional commits)
+- [x] `apps/api`: Express 5, helmet, cors (tenant-aware origin check), pino-http with request id, Zod validation middleware, error handler producing the standard envelope, `/health` — CORS uses a pluggable `isOriginAllowed` hook (env allowlist now; tenant-domain lookup in Phase 1)
+- [x] `apps/web`: Next.js App Router, Tailwind, shadcn/ui, TanStack Query, API client generated from `packages/shared` schemas (typed fetch wrapper), app shell with sidebar/topbar, light/dark
+- [x] Serwist PWA set-up (manifest, icons placeholder, offline fallback page)
+- [x] `packages/shared`: `time` (tenant-tz helpers: `today(tz)`, `isWeekend(date, workWeek)`, `eachDay(start,end)`), `money` (decimal.js wrapper, `round(value, mode, scale)`), envelope types
+- [x] Vitest in all packages; Playwright skeleton in `apps/web`
+- [~] GitHub Actions: install → typecheck → lint → test on PR — workflow written; first green run pending a GitHub remote
+- [~] `.env.example` for api/web; local dev uses Supabase CLI (`supabase start`) as both "platform" and one "dev tenant" — config committed; `pnpm supabase start` not yet run on this machine
 
 **Done when:** `pnpm dev` runs both apps, `/health` returns OK, CI green, a unit test in `shared/time` proves weekend detection uses tenant tz, not server tz.
 
@@ -423,3 +423,17 @@ calculatePayslip({
 
 ## 7. Decisions log
 _(Claude Code appends dated decisions here.)_
+
+### 2026-10-17 — Phase 0
+- **Repo root** is `hr-portal-plan/` (local, OneDrive-synced by choice). The old UQMS code moved to `reference/uqms-hr/{bk,front}`; it is excluded from lint, format and the workspace.
+- **Tooling:** pnpm 10 through Corepack (pinned in `packageManager`). Shared versions live in the pnpm `catalog:`. The Supabase CLI is a root devDependency (`pnpm supabase ...`).
+- **TypeScript pinned to ~6.0** because typescript-eslint 8.x requires TS < 6.1 (TS 7 is out).
+- **Versions at start:** Next 16, React 19, Tailwind v4 (CSS-first config, no `tailwind.config`), Zod 4, ESLint 10 (flat config), Vitest 5, Express 5.
+- **Internal packages ship TS source** (no build step). Next uses `transpilePackages`; the API's `tsup` bundles `@hr/*`. *Phase 1 deploy note:* the bundled API must also resolve its workspace packages' runtime deps (e.g. `date-fns-tz`), so add them to `apps/api` or use `pnpm deploy`.
+- **Hard Rule 3 is enforced by lint:** ESLint `no-restricted-syntax` bans local-time `Date` getters/setters (`getDay`, `setHours`, ...) everywhere except `packages/shared/src/time`.
+- **Business dates** are `YYYY-MM-DD` strings. Weekday comes from the date string (UTC math), never from server-local time.
+- **Money:** `toDbString()` throws on more than 2 decimals, so callers must round with the tenant's rounding mode first. `round()` has no default mode.
+- **Validation:** Express 5 makes `req.query` read-only, so parsed input lives on `req.valid`; use `parsed(req, schemas)` for typed access.
+- **PWA:** `@serwist/turbopack` (Next 16 builds with Turbopack), with the SW served from the route `/serwist/sw.js` and disabled in dev.
+- **E2E** runs against a production web build. Cold dev-mode compiles were too slow for stable timeouts.
+- **Local Supabase** has public signup disabled (invite-only, per §1 Auth).
