@@ -1,0 +1,30 @@
+{
+  "name": "@hr/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./time": "./src/time/index.ts",
+    "./money": "./src/money/index.ts",
+    "./envelope": "./src/envelope.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "date-fns": "catalog:",
+    "date-fns-tz": "catalog:",
+    "decimal.js": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@hr/config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
