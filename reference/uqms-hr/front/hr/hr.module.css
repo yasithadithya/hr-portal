@@ -1,0 +1,763 @@
+/* ============================================================
+   HR module styling, on the design tokens (src/styles/tokens.css).
+   Shared building blocks (Modal, Badge) come from src/ui via hrShared.tsx.
+   ============================================================ */
+
+/* ---------- View header row (count + actions) ---------- */
+.topBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.headerSub {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* Primary action button (matches ui Button variant="primary") */
+.addBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: var(--control-h-md);
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-md);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.addBtn:hover {
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+}
+
+.addBtn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* ---------- Filter card ---------- */
+.filterBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.filterBar .spacer {
+    flex: 1;
+}
+
+.filterField {
+    display: flex;
+    flex-direction: column;
+    min-width: 160px;
+}
+
+/* ---------- Tables (match ui DataTable) ---------- */
+.tableWrap {
+    overflow-x: auto;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--text-md);
+    font-variant-numeric: tabular-nums;
+}
+
+.table th {
+    height: 40px;
+    padding: 0 var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-1);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: .02em;
+    color: var(--color-text-tertiary);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover td {
+    background: var(--color-surface-2);
+}
+
+.alignRight {
+    text-align: right !important;
+}
+
+.cellStrong {
+    font-weight: var(--weight-medium);
+    color: var(--color-text-primary);
+}
+
+.cellSub {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+    color: var(--color-text-tertiary);
+}
+
+.emptyRow {
+    padding: var(--space-8) var(--space-4) !important;
+    text-align: center;
+    color: var(--color-text-tertiary);
+}
+
+/* Phones: tables scroll sideways rather than crushing text columns to a word per line,
+   and the empty message stays in view instead of centring across the scrolled width. */
+@media (max-width: 639px) {
+    .table {
+        min-width: 560px;
+    }
+
+    .emptyRow {
+        text-align: left;
+    }
+
+    .emptyRowText {
+        position: sticky;
+        left: var(--space-4);
+        display: inline-block;
+        max-width: calc(100vw - 6rem);
+    }
+}
+
+/* ---------- Row action buttons (match ui Button size="sm") ---------- */
+.actionRow {
+    display: inline-flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.actionBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: var(--control-h-sm);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+.actionBtn:hover {
+    background: var(--color-surface-3);
+    border-color: var(--color-border-strong);
+}
+
+.actionBtn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.actionPrimary {
+    border-color: var(--color-accent-muted);
+    color: var(--color-accent-text);
+}
+
+.actionPrimary:hover {
+    background: var(--color-accent-subtle);
+    border-color: var(--color-accent);
+}
+
+.actionSuccess {
+    border-color: var(--color-success-border);
+    color: var(--color-success-fg);
+}
+
+.actionSuccess:hover {
+    background: var(--color-success-bg);
+    border-color: var(--color-success-fg);
+}
+
+.actionDanger {
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-danger-fg);
+}
+
+.actionDanger:hover {
+    background: var(--color-danger-bg);
+    border-color: transparent;
+}
+
+.iconBtn {
+    display: inline-grid;
+    place-items: center;
+    width: var(--control-h-md);
+    height: var(--control-h-md);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+}
+
+.iconBtn:hover {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-fg);
+}
+
+@media (pointer: coarse) {
+    .actionBtn {
+        height: 38px;
+    }
+}
+
+/* ---------- Dialog content ---------- */
+
+.modalGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0 var(--space-4);
+}
+
+@media (min-width: 640px) {
+    .modalGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .modalGrid3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--space-4);
+    min-width: 0;
+}
+
+.fullWidth {
+    grid-column: 1 / -1;
+}
+
+.formSection {
+    margin: var(--space-2) 0 var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-border-subtle);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.hint {
+    margin-top: 6px;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+}
+
+/* ---------- In-page section switcher (segmented) ---------- */
+.sectionSwitch {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+}
+
+.sectionBtn {
+    height: 30px;
+    padding: 0 var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+}
+
+.sectionBtn:hover {
+    color: var(--color-text-primary);
+}
+
+.sectionBtnActive {
+    background: var(--color-surface-3);
+    color: var(--color-text-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+}
+
+/* ---------- Progress ---------- */
+.progressTrack {
+    height: 6px;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-3);
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-accent);
+}
+
+.progressFillDone {
+    background: var(--color-success-solid);
+}
+
+/* ---------- Summary tiles ---------- */
+.summaryCards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+.summaryCard {
+    padding: var(--space-4);
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.summaryValue {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+}
+
+.summaryLabel {
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+}
+
+.sectionTitle {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.mutedNote {
+    font-size: var(--text-md);
+    color: var(--color-text-tertiary);
+}
+
+.infoGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: var(--space-4);
+}
+
+.infoRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+    font-size: var(--text-md);
+    color: var(--color-text-secondary);
+}
+
+.infoRow:last-child {
+    border-bottom: none;
+}
+
+.checkLabel,
+.checkInline {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-md);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.checkInline {
+    font-size: var(--text-sm);
+    white-space: nowrap;
+}
+
+.checkLabel input,
+.checkInline input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--color-accent);
+}
+
+.inlineControl {
+    width: auto;
+    min-width: 150px;
+    margin-bottom: 0 !important;
+}
+
+.formCard {
+    max-width: 720px;
+}
+
+/* Repeatable editor row (allowances, ratings, checklist items…).
+   Callers set grid-template-columns since ratios vary per form. */
+.dynRow {
+    display: grid;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.dynHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.miniSelect {
+    width: auto;
+    min-width: 110px;
+    min-height: var(--control-h-sm) !important;
+    margin-bottom: 0 !important;
+    padding: 0 28px 0 10px !important;
+    font-size: var(--text-sm) !important;
+}
+
+/* ---------- Entity cards ---------- */
+.gridAuto {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.entityCard {
+    padding: var(--space-4);
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.entityCardHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.entityTitle {
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.entityMeta {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+}
+
+.entityDesc {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-md);
+    color: var(--color-text-secondary);
+}
+
+.cardActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.inactive {
+    opacity: .6;
+}
+
+/* ---------- Task rows ---------- */
+.taskRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.taskRow:last-child {
+    border-bottom: none;
+}
+
+.taskTitle {
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-primary);
+}
+
+.taskTitleDone {
+    text-decoration: line-through;
+    color: var(--color-text-tertiary);
+}
+
+.taskMeta {
+    margin-top: 2px;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+}
+
+/* ---------- My HR ---------- */
+.announceStrip {
+    margin-bottom: var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-accent);
+    border-radius: var(--radius-md);
+}
+
+.announceRow {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    font-size: var(--text-md);
+}
+
+.profileCard {
+    max-width: 680px;
+}
+
+.profileHead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    margin-bottom: var(--space-6);
+}
+
+.avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-accent-subtle);
+    box-shadow: inset 0 0 0 1px var(--color-accent-muted);
+    color: var(--color-accent-text);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+}
+
+.profileName {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.profileGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-5);
+    font-size: var(--text-md);
+    color: var(--color-text-secondary);
+}
+
+@media (max-width: 639px) {
+    .profileGrid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.emptyState {
+    max-width: 520px;
+    margin: var(--space-8) auto;
+    text-align: center;
+}
+
+/* ---------- Payslip ---------- */
+.payMeta {
+    margin-bottom: var(--space-5);
+    padding: var(--space-4);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+}
+
+.payCols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-7);
+}
+
+@media (max-width: 639px) {
+    .payCols {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+    }
+}
+
+.payColTitle {
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-border-subtle);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-secondary);
+}
+
+.payRow {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-md);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary);
+}
+
+.payRowStrong {
+    margin-top: var(--space-3);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border-subtle);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.payNote {
+    margin-top: var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+}
+
+.payTotal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 2px solid var(--color-border);
+}
+
+.payTotalValue {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-success-fg);
+}
+
+/* ---------- Small helpers (replace former inline styles) ---------- */
+.spaced { margin-bottom: var(--space-4); }
+.spacedLg { margin-bottom: var(--space-6); }
+.flush { margin: 0 !important; }
+.grow { flex: 1; min-width: 0; }
+.clip { max-width: 240px; overflow-wrap: anywhere; }
+.body { font-size: var(--text-md); color: var(--color-text-secondary); white-space: pre-wrap; }
+.metaFoot { margin: var(--space-2) 0 0; }
+.detailPara { margin-bottom: var(--space-2); font-size: var(--text-md); color: var(--color-text-secondary); }
+.cellSubInline { margin-left: 6px; font-size: var(--text-sm); color: var(--color-text-tertiary); }
+.textDanger { color: var(--color-danger-fg) !important; font-weight: var(--weight-semibold); }
+.textWarning { color: var(--color-warning-fg) !important; font-weight: var(--weight-semibold); }
+.textSuccess { color: var(--color-success-fg) !important; }
+.inlineGroup { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.cardFooter { display: flex; justify-content: flex-end; margin-top: var(--space-3); }
+.itemList { margin: 0 0 var(--space-3); padding-left: 18px; font-size: var(--text-md); color: var(--color-text-secondary); }
+.itemList li { margin-bottom: 4px; }
+.progressSpaced { margin-bottom: 4px; }
+.progressCell { min-width: 120px; }
+.twoCol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: var(--space-6); }
+
+/* Repeatable editor rows: fixed ratios on wide screens, stacked on phones. */
+@media (min-width: 640px) {
+    .dynRatings { grid-template-columns: 2fr 80px 2fr auto; }
+    .dynTasks { grid-template-columns: 2fr 2fr 90px auto; }
+    .dynAllowances { grid-template-columns: 2fr 1fr auto auto; }
+    .modalGridWideFirst { grid-template-columns: 2fr 1fr; }
+}
+
+/* HR dashboard */
+.infoCard { margin: 0; }
+.distRow { margin-bottom: var(--space-3); }
+.distRow:last-child { margin-bottom: 0; }
+.distHead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: 4px; font-size: var(--text-md); }
+.infoRowStack { display: block; }
+.block { display: block; }
+
+/* Surfaces and labels that used the old global .card / .form-label */
+.card {
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-4);
+}
+
+.groupLabel {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-secondary);
+}
+
+/* Compact select inside checklist task rows */
+.miniSelect select {
+    height: var(--control-h-sm);
+    font-size: var(--text-sm);
+}
+
+@media (min-width: 768px) {
+    .card { padding: var(--space-6); }
+}
