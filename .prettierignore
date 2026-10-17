@@ -6,3 +6,6 @@ coverage/
 apps/web/public/sw.js
 **/migrations/meta/
 supabase/
+CLAUDE.md
+docs/
+**/next-env.d.ts

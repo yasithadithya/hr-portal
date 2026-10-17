@@ -4,7 +4,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "public/sw.js"]
+      "env": ["NEXT_PUBLIC_*", "NODE_ENV"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
       "cache": false,
@@ -15,7 +16,7 @@
     },
     "lint": {},
     "test": {
-      "outputs": ["coverage/**"]
+      "outputs": []
     }
   }
 }
