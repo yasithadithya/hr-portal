@@ -24,6 +24,7 @@ import {
 
 import { errorMessage } from '@/components/common/error-alert';
 import { api, apiDownload } from '@/lib/api';
+import { withOfflineCache } from '@/lib/offline';
 
 function usePayrollMutation<V, R>(fn: (v: V) => Promise<R>, success?: string | ((r: R) => string)) {
   const qc = useQueryClient();
@@ -243,7 +244,10 @@ export const usePayslip = (id: string | null) =>
 export const useMyPayslips = () =>
   useQuery({
     queryKey: ['payroll', 'payslips', 'mine'],
-    queryFn: ({ signal }) => api.get('/api/v1/payslips', z.array(payslipSummarySchema), { signal }),
+    queryFn: ({ signal }) =>
+      withOfflineCache('payslips', () =>
+        api.get('/api/v1/payslips', z.array(payslipSummarySchema), { signal }),
+      ),
   });
 
 export const downloadPayslip = (id: string, name: string) =>

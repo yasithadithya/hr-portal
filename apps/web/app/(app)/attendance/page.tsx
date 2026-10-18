@@ -1,9 +1,9 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, LogIn, LogOut, MapPin, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Wrench } from 'lucide-react';
 import { useState } from 'react';
 
-import type { AttendanceDay, ClockResult } from '@hr/shared';
+import type { AttendanceDay } from '@hr/shared';
 
 import {
   AttendanceTabs,
@@ -16,12 +16,12 @@ import {
   todayIn,
   useTenantTz,
 } from '@/components/attendance/attendance-ui';
+import { ClockCard } from '@/components/attendance/clock-card';
 import { RequirePermission } from '@/components/auth/require-permission';
-import { ErrorAlert, errorMessage } from '@/components/common/error-alert';
+import { ErrorAlert } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
 import { FormField } from '@/components/employees/fields';
 import { STATUS_STYLE } from '@/components/leave/leave-tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,166 +46,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/lib/auth';
 import {
-  useClock,
   useDecideCorrection,
   useMonthDays,
   useMyRegularizations,
   useRequestCorrection,
-  useToday,
 } from '@/lib/queries/attendance';
-
-type Position = { lat: number; lng: number; accuracy: number } | { error: string };
-
-/** Browser location with readable failure reasons (sent to the API so HR sees why). */
-function locate(): Promise<Position> {
-  return new Promise((resolve) => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      resolve({ error: 'this browser cannot share location' });
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (p) =>
-        resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
-      (err) =>
-        resolve({
-          error:
-            err.code === err.PERMISSION_DENIED
-              ? 'location permission denied'
-              : err.code === err.TIMEOUT
-                ? 'location timed out'
-                : 'location unavailable',
-        }),
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
-    );
-  });
-}
-
-function ClockCard() {
-  const tz = useTenantTz();
-  const today = useToday();
-  const clock = useClock();
-  const [result, setResult] = useState<ClockResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [locating, setLocating] = useState(false);
-  const t = today.data;
-
-  async function onClock() {
-    setResult(null);
-    setError(null);
-    let pos: Position | null = null;
-    if (t?.checks.geofence) {
-      setLocating(true);
-      pos = await locate();
-      setLocating(false);
-    }
-    const standalone =
-      typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)').matches;
-    clock.mutate(
-      {
-        source: standalone ? 'pwa' : 'web',
-        ...(pos && 'lat' in pos
-          ? { lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy }
-          : pos
-            ? { locationError: pos.error }
-            : {}),
-      },
-      { onSuccess: setResult, onError: (e) => setError(errorMessage(e)) },
-    );
-  }
-
-  if (today.error) return <ErrorAlert error={today.error} />;
-  if (!t) return <Skeleton className="h-48" />;
-  if (!t.linked)
-    return (
-      <Alert>
-        <AlertTitle>No employee record</AlertTitle>
-        <AlertDescription>
-          Your account is not linked to an employee, so you cannot clock in.
-        </AlertDescription>
-      </Alert>
-    );
-
-  const accepted = t.punches.filter((p) => p.accepted);
-  const busy = clock.isPending || locating;
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Today · {fmtDate(t.date)}</CardTitle>
-        <CardDescription>
-          {t.shift
-            ? `${t.shift.name}: ${t.shift.startTime}–${t.shift.endTime}`
-            : 'No shift assigned'}
-          {t.checks.geofence && (
-            <span className="ml-2 inline-flex items-center gap-1">
-              <MapPin className="size-3" /> location needed
-            </span>
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <Button
-            size="lg"
-            className="h-14 min-w-44 text-base"
-            disabled={busy || !t.canClock}
-            onClick={onClock}
-            data-testid="clock-button"
-          >
-            {t.nextAction === 'in' ? <LogIn /> : <LogOut />}
-            {locating ? 'Getting location…' : t.nextAction === 'in' ? 'Clock in' : 'Clock out'}
-          </Button>
-          <div className="text-sm">
-            <p>
-              In: <span className="font-medium">{fmtTime(accepted[0]?.at ?? null, tz)}</span>
-              {accepted.length > 1 && (
-                <>
-                  {' '}
-                  · Out:{' '}
-                  <span className="font-medium">
-                    {fmtTime(accepted[accepted.length - 1]!.at, tz)}
-                  </span>
-                </>
-              )}
-            </p>
-            {t.day && t.day.status !== 'absent' && (
-              <p className="text-muted-foreground">
-                <StatusBadge status={t.day.status} />{' '}
-                {t.day.lateMinutes > 0 && `late ${fmtMinutes(t.day.lateMinutes)}`}
-              </p>
-            )}
-          </div>
-        </div>
-        {result && (
-          <Alert
-            variant={result.accepted ? 'default' : 'destructive'}
-            data-testid={result.accepted ? 'clock-accepted' : 'clock-rejected'}
-          >
-            <AlertTitle>
-              {result.accepted
-                ? `Clocked ${t.nextAction === 'in' ? 'out' : 'in'} at ${fmtTime(result.punch.at, tz)}`
-                : 'Clock-in not accepted'}
-            </AlertTitle>
-            {!result.accepted && <AlertDescription>{result.message}</AlertDescription>}
-          </Alert>
-        )}
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        {t.punches.some((p) => !p.accepted) && (
-          <p className="text-muted-foreground text-xs">
-            Rejected attempts today:{' '}
-            {t.punches
-              .filter((p) => !p.accepted)
-              .map((p) => fmtTime(p.at, tz))
-              .join(', ')}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 function CorrectionDialog({ date, onClose }: { date: string | null; onClose: () => void }) {
   const request = useRequestCorrection();

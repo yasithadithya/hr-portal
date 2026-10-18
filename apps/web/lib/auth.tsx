@@ -7,6 +7,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { can, meSchema, type Me, type PermissionKey, type Scope } from '@hr/shared';
 
 import { api, ApiError, setTokenProvider } from './api';
+import { clearOfflineCache } from './offline';
 import { getSupabase } from './supabase';
 import { usePublicTenant } from './tenant';
 
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     meError: meQuery.error instanceof ApiError ? meQuery.error : null,
     can: (key, scope = 'self') => !!meQuery.data && can(meQuery.data.permissions, key, scope),
     signOut: async () => {
+      clearOfflineCache();
       await supabase?.auth.signOut();
       queryClient.clear();
     },

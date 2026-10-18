@@ -21,6 +21,7 @@ import {
 
 import { errorMessage } from '@/components/common/error-alert';
 import { api } from '@/lib/api';
+import { withOfflineCache } from '@/lib/offline';
 
 const invalidateLeave = (qc: ReturnType<typeof useQueryClient>) =>
   qc.invalidateQueries({ queryKey: ['leave'] });
@@ -46,12 +47,12 @@ export const useLeaveTypes = () =>
 export const useBalances = (year: number, employeeId?: string) =>
   useQuery({
     queryKey: ['leave', 'balances', year, employeeId ?? 'me'],
-    queryFn: ({ signal }) =>
-      api.get(
-        `/api/v1/leave/balances?year=${year}${employeeId ? `&employeeId=${employeeId}` : ''}`,
-        z.array(balanceSchema),
-        { signal },
-      ),
+    queryFn: ({ signal }) => {
+      const path = `/api/v1/leave/balances?year=${year}${employeeId ? `&employeeId=${employeeId}` : ''}`;
+      const load = () => api.get(path, z.array(balanceSchema), { signal });
+      // My own balances stay viewable offline (last known copy).
+      return employeeId ? load() : withOfflineCache(`balances:${year}`, load);
+    },
   });
 
 export const useMyRequests = (year: number) =>

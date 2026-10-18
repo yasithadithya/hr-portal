@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/lib/auth';
+import { useApprovalsSummary } from '@/lib/queries/notifications';
 import { usePublicTenant } from '@/lib/tenant';
 import { cn } from '@/lib/utils';
 
@@ -13,10 +14,12 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { can } = useAuth();
   const items = NAV_ITEMS.filter((i) => !i.anyOf || i.anyOf.some((k) => can(k, i.minScope)));
+  const approvals = useApprovalsSummary(items.some((i) => i.badge === 'approvals'));
 
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 p-3">
-      {items.map(({ href, label, icon: Icon, ready }) => {
+      {items.map(({ href, label, icon: Icon, ready, badge }) => {
+        const count = badge === 'approvals' ? (approvals.data?.total ?? 0) : 0;
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
         const classes = cn(
           'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -33,6 +36,14 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           >
             <Icon className="size-4" />
             {label}
+            {count > 0 && (
+              <span
+                className="bg-primary text-primary-foreground ml-auto rounded-full px-2 py-0.5 text-xs"
+                data-testid="approvals-count"
+              >
+                {count}
+              </span>
+            )}
           </Link>
         ) : (
           <span key={href} className={classes} aria-disabled="true" title="Coming soon">

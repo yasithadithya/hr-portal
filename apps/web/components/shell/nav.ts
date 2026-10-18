@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   Clock,
+  Inbox,
   LayoutDashboard,
   Receipt,
   Settings,
@@ -21,11 +22,22 @@ export interface NavItem {
   /** Shown if the user holds any of these (at `minScope`). Omit = everyone signed in. */
   anyOf?: PermissionKey[];
   minScope?: Scope;
+  /** Shows the pending-approvals count. */
+  badge?: 'approvals';
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard, ready: true },
   { href: '/me', label: 'My HR', icon: UserRound, ready: true },
+  {
+    href: '/approvals',
+    label: 'Approvals',
+    icon: Inbox,
+    ready: true,
+    anyOf: ['leave.approve', 'attendance.approve', 'employees.update'],
+    minScope: 'team',
+    badge: 'approvals',
+  },
   {
     href: '/employees',
     label: 'Employees',

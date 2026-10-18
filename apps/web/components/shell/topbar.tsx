@@ -17,6 +17,7 @@ import {
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/auth';
 
+import { NotificationBell } from './notification-bell';
 import { Brand, SidebarNav } from './sidebar';
 import { ThemeToggle } from './theme-toggle';
 
@@ -49,6 +50,7 @@ export function Topbar() {
       </Sheet>
 
       <div className="flex-1" />
+      <NotificationBell />
       <ThemeToggle />
 
       <DropdownMenu>
