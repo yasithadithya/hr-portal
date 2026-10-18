@@ -89,6 +89,8 @@ export const employees = pgTable(
     taxFileNo: text('tax_file_no'),
 
     archivedAt: timestamp('archived_at', { withTimezone: true }),
+    /** PDPA retention: personal data removed after the retention period (records kept). */
+    anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
     ...auditColumns(),
   },
   (t) => [

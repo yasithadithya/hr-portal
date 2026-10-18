@@ -10,6 +10,7 @@ import { InlineQueue, PgBossQueue, type JobQueue } from './jobs/queue';
 import { logSender, resendSender, smtpSender, type EmailSender } from './lib/email';
 import { createLogger } from './lib/logger';
 import { webPushSender } from './lib/push';
+import { supabaseStorage } from './lib/storage';
 import { PoolManager } from './tenancy/pools';
 import { TenantRegistry } from './tenancy/registry';
 
@@ -52,6 +53,7 @@ const handlers = createJobHandlers({
   jobs,
   logger,
   appBaseUrl: env.APP_BASE_URL,
+  storage: (conn) => supabaseStorage(conn.supabaseUrl, conn.serviceRoleKey),
   pushSubject: `mailto:${/<([^>]+)>/.exec(env.EMAIL_FROM)?.[1] ?? env.EMAIL_FROM}`,
 });
 let boss: PgBossQueue | null = null;

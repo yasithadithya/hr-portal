@@ -8,6 +8,7 @@ import {
   listTenants,
   primaryDomain,
   type ControlDb,
+  type TenantConnection,
 } from '@hr/control-db';
 import { refreshJobProjections, schema, type TenantDb } from '@hr/db';
 import { CURRENT_STATUSES } from '@hr/shared';
@@ -15,9 +16,11 @@ import { addDays, today as todayIn } from '@hr/shared/time';
 
 import { renderEmail, type EmailSender } from '../lib/email';
 import { generateVapidKeys, type PushSender } from '../lib/push';
+import type { Storage } from '../lib/storage';
 import { processRange } from '../modules/attendance/process';
 import { getSettings } from '../modules/company/routes';
 import { notify, usersWithPermission } from '../modules/notifications/notify';
+import { anonymizeEmployee, retentionCandidates } from '../modules/privacy/service';
 import type { PoolManager } from '../tenancy/pools';
 
 import type { JobData, JobHandlers, JobQueue } from './queue';
@@ -44,6 +47,8 @@ export interface WorkerDeps {
   appBaseUrl?: string | undefined;
   /** VAPID subject, e.g. mailto:support@… */
   pushSubject: string;
+  /** File storage for a tenant (retention removes documents and photos). */
+  storage?: (conn: TenantConnection) => Storage;
 }
 
 /** A tenant's database for a job (payload carries tenantId; no request, no host). */
@@ -51,7 +56,7 @@ async function tenantRuntime(deps: WorkerDeps, tenantId: string) {
   const tenant = await findTenantById(deps.control, tenantId);
   if (!tenant || tenant.status !== 'active') return null;
   const conn = await getTenantConnection(deps.control, tenant, deps.masterKey);
-  return { tenant, db: deps.pools.get(tenant.id, conn.dbUrl) as TenantDb };
+  return { tenant, conn, db: deps.pools.get(tenant.id, conn.dbUrl) as TenantDb };
 }
 
 function need(data: JobData): string {
@@ -225,7 +230,21 @@ export function createJobHandlers(deps: WorkerDeps): JobHandlers {
           dedupeKey: `contract:${e.id}:${e.contractEndDate}`,
         });
     }
-    log.info({ tenantId, today, reminders: docs.length + staff.length }, 'daily tenant job done');
+    // PDPA retention: only when the tenant has set a period.
+    const years = settings['privacy.retention_years_after_exit'];
+    let anonymized = 0;
+    if (years) {
+      const due = await retentionCandidates(rt.db, today, years);
+      const storage = deps.storage?.(rt.conn) ?? null;
+      for (const d of due) {
+        await anonymizeEmployee(rt.db, { userId: null, userAgent: 'daily-job' }, d.id, storage);
+        anonymized++;
+      }
+    }
+    log.info(
+      { tenantId, today, reminders: docs.length + staff.length, anonymized },
+      'daily tenant job done',
+    );
   }
 
   async function dailySweep() {

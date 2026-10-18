@@ -10,6 +10,7 @@ import type { JwksResolver } from './lib/jwt';
 import { authenticate } from './middleware/auth';
 import { allowlistOrigins, corsMiddleware, type OriginCheck } from './middleware/cors';
 import { errorHandler, notFound } from './middleware/errors';
+import { rateLimit } from './middleware/rateLimit';
 import { requestLogger } from './middleware/requestLogger';
 import { tenantMiddleware, type AuthAdminFactory, type StorageFactory } from './middleware/tenant';
 import { attendanceRoutes } from './modules/attendance/routes';
@@ -26,6 +27,7 @@ import { payrollConfigRoutes } from './modules/payroll/config';
 import { payrollRunRoutes } from './modules/payroll/routes';
 import { payrollSetupRoutes } from './modules/payroll/setup';
 import { platformRoutes } from './modules/platform/routes';
+import { privacyRoutes } from './modules/privacy/routes';
 import { publicRoutes } from './modules/public/routes';
 import { reportRoutes } from './modules/reports/routes';
 import { roleRoutes } from './modules/roles/routes';
@@ -84,6 +86,13 @@ export function createApp({
   app.use(corsMiddleware(isOriginAllowed ?? allowlistOrigins(env.CORS_ORIGINS)));
   app.use(express.json({ limit: '1mb' }));
 
+  const limits = rateLimit({
+    perIp: env.RATE_LIMIT_PER_IP || Number.MAX_SAFE_INTEGER,
+    perTenant: env.RATE_LIMIT_PER_TENANT || Number.MAX_SAFE_INTEGER,
+    sensitivePerIp: env.RATE_LIMIT_SENSITIVE_PER_IP || Number.MAX_SAFE_INTEGER,
+  });
+  app.use(limits.ip);
+
   app.use(healthRoutes(version));
 
   if (tenancy) {
@@ -107,6 +116,7 @@ export function createApp({
         jobs: tenancy.jobs,
       }),
     );
+    api.use(limits.tenant);
     api.use(publicRoutes());
     mountTenantPublic?.(api);
 
@@ -128,6 +138,7 @@ export function createApp({
     api.use(notificationRoutes({ control: tenancy.control, masterKey: tenancy.masterKey }));
     api.use(selfServiceRoutes());
     api.use(reportRoutes());
+    api.use(privacyRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

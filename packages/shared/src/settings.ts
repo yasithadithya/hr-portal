@@ -69,6 +69,25 @@ export const SETTINGS = {
     schema: z.number().int().min(1).max(120),
     default: 14,
   },
+  'privacy.notice': {
+    label: 'Privacy notice shown to every user (PDPA). Leave empty until your legal text is ready.',
+    group: 'privacy',
+    schema: z.string().max(20_000).nullable(),
+    default: null,
+  },
+  'privacy.notice_version': {
+    label: 'Privacy notice version (raise it to ask everyone to acknowledge again)',
+    group: 'privacy',
+    schema: z.number().int().min(1).max(10_000),
+    default: 1,
+  },
+  'privacy.retention_years_after_exit': {
+    label:
+      'Remove personal data of former employees this many years after they leave (empty = never). Set only after confirming legal retention periods.',
+    group: 'privacy',
+    schema: z.number().int().min(1).max(50).nullable(),
+    default: null,
+  },
 } as const satisfies Record<
   string,
   { label: string; group: string; schema: z.ZodType; default: unknown }

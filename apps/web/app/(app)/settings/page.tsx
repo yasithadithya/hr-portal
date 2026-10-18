@@ -4,6 +4,7 @@ import {
   Building2,
   CalendarDays,
   History,
+  Lock,
   Network,
   ShieldCheck,
   SlidersHorizontal,
@@ -51,6 +52,13 @@ const SECTIONS: {
     title: 'Preferences',
     description: 'Two-factor authentication, brand colour, numbering',
     icon: SlidersHorizontal,
+    perm: 'settings.manage',
+  },
+  {
+    href: '/settings/privacy',
+    title: 'Privacy',
+    description: 'Privacy notice, data retention and data requests (PDPA)',
+    icon: Lock,
     perm: 'settings.manage',
   },
   {

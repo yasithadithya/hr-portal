@@ -51,6 +51,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { apiDownload } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import {
   openDocument,
@@ -174,6 +175,16 @@ function LifecycleMenu({ e }: { e: EmployeeDetail }) {
               Exit employee
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem
+            onClick={() =>
+              apiDownload(
+                `/api/v1/employees/${e.id}/data-export`,
+                `personal-data-${e.employeeNo}.json`,
+              ).catch((err) => toast.error(errorMessage(err)))
+            }
+          >
+            Download personal data (PDPA)
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <Dialog open={!!dialog} onOpenChange={(o) => !o && close()}>

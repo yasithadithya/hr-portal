@@ -25,6 +25,7 @@ import { monthRange } from '@hr/shared/time';
 
 import { authedCtx, scopeOf, type AuthedUser, type RequestContext } from '../../context';
 import { AppError } from '../../lib/errors';
+import { requireFileType } from '../../lib/sniff';
 import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 import { tenantToday } from '../employees/service';
@@ -485,6 +486,7 @@ export function leaveRoutes(): Router {
       const ext = ATTACH_TYPES[type];
       if (!ext || !Buffer.isBuffer(req.body) || !req.body.length)
         throw AppError.badRequest('Attach a PDF or image up to 10 MB');
+      requireFileType(type, req.body, AppError.badRequest);
       const path = `${r.employeeId}/leave/${r.id}-${randomUUID()}.${ext}`;
       await ctx.storage().upload(ATTACH_BUCKET, path, req.body, type);
       const updated = await withAudit(ctx.db, ctx.actor, 'leave_requests', async (tx) => {

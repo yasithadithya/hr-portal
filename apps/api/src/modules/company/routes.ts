@@ -30,6 +30,7 @@ import { businessDateSchema, countWorkingDays, type WorkWeek } from '@hr/shared/
 
 import { authedCtx, type RequestContext } from '../../context';
 import { AppError } from '../../lib/errors';
+import { requireFileType } from '../../lib/sniff';
 import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 
@@ -150,6 +151,7 @@ export function companyRoutes(): Router {
       if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) {
         throw AppError.badRequest('Upload a PNG, JPEG, WebP or SVG image up to 1 MB');
       }
+      requireFileType(type, req.body, AppError.badRequest);
       const path = `logo-${randomUUID()}.${ext}`;
       await ctx.storage().upload(LOGO_BUCKET, path, req.body, type);
       const [before] = await ctx.db.select().from(companyProfile);

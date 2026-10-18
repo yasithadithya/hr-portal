@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { PROFILE_FIELDS, type ProfileSection } from '@hr/shared';
 
-import { ErrorAlert } from '@/components/common/error-alert';
+import { ErrorAlert, errorMessage } from '@/components/common/error-alert';
 import { PageHeader } from '@/components/common/page-header';
 import { FormField, selectClass } from '@/components/employees/fields';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { apiDownload } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useEmployee } from '@/lib/queries/employees';
 import {
@@ -197,7 +199,23 @@ export default function MyProfilePage() {
     return <p className="text-muted-foreground">Your account is not linked to an employee.</p>;
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="My profile" description="HR reviews changes before they apply." />
+      <PageHeader
+        title="My profile"
+        description="HR reviews changes before they apply."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              apiDownload('/api/v1/me/data-export', 'my-personal-data.json').catch((err) =>
+                toast.error(errorMessage(err)),
+              )
+            }
+          >
+            Download my data
+          </Button>
+        }
+      />
       {employee.error && <ErrorAlert error={employee.error} />}
       {!e ? (
         <Skeleton className="h-64" />

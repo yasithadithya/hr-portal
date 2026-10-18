@@ -119,6 +119,7 @@ export async function createHarness(
       logger: pino({ level: 'silent' }),
       appBaseUrl: 'http://app.test',
       pushSubject: 'mailto:test@hr.test',
+      storage: () => storage,
     }),
   );
   const app = createApp({

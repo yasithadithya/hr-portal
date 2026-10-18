@@ -21,6 +21,7 @@ import { AppError } from '../../lib/errors';
 import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 import { tenantToday } from '../employees/service';
+import { auditSensitiveRead } from '../privacy/service';
 
 const {
   employeeBankCodes,
@@ -194,7 +195,10 @@ export function payrollSetupRoutes(): Router {
 
   router.get('/payroll/employees/:id/setup', read, validate(empParams), async (req, res) => {
     const ctx = authedCtx(req);
-    res.json(ok(await paySetup(ctx.db, parsed(req, empParams).params.id)));
+    const id = parsed(req, empParams).params.id;
+    const setup = await paySetup(ctx.db, id);
+    await auditSensitiveRead(ctx, 'employee_salary', id, 'view_salary', id);
+    res.json(ok(setup));
   });
 
   /** New salary from a date; the previous one ends the day before (same date = correction). */

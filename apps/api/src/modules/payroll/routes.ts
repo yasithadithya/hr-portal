@@ -21,6 +21,7 @@ import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 import { getSettings } from '../company/routes';
 import * as events from '../notifications/events';
+import { auditSensitiveRead } from '../privacy/service';
 
 import { buildBankFile, BankFileError, type PaymentRow } from './bankFile';
 import { payslipPdf } from './pdf';
@@ -685,7 +686,10 @@ export function payrollRunRoutes(): Router {
       const ctx = authedCtx(req);
       const { params } = parsed(req, idParams);
       const staff = await visiblePayslip(ctx, req, params.id);
-      res.json(ok(await payslipDetail(ctx, params.id, staff)));
+      const detail = await payslipDetail(ctx, params.id, staff);
+      if (detail)
+        await auditSensitiveRead(ctx, 'payslips', detail.id, 'view_payslip', detail.employeeId);
+      res.json(ok(detail));
     },
   );
 

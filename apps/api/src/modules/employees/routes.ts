@@ -29,9 +29,11 @@ import { addDays, businessDateSchema } from '@hr/shared/time';
 
 import { authedCtx, scopeOf, type AuthedUser, type RequestContext } from '../../context';
 import { AppError } from '../../lib/errors';
+import { requireFileType } from '../../lib/sniff';
 import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 import { getSettings } from '../company/routes';
+import { auditSensitiveRead } from '../privacy/service';
 
 import * as repo from './repo';
 import * as service from './service';
@@ -247,7 +249,10 @@ export function employeeRoutes(): Router {
       parsed(req, idParams).params.id,
       'employees.read',
     );
-    res.json(ok(await repo.toDetail(ctx.db, e, accessFor(ctx, scope, e.id))));
+    const access = accessFor(ctx, scope, e.id);
+    // PDPA: someone else viewing NIC, bank and personal details is logged.
+    if (access === 'full') await auditSensitiveRead(ctx, 'employees', e.id, 'view_personal', e.id);
+    res.json(ok(await repo.toDetail(ctx.db, e, access)));
   });
 
   router.get('/employees/:id/job-history', read, validate(idParams), async (req, res) => {
@@ -451,6 +456,7 @@ export function employeeRoutes(): Router {
       if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) {
         throw AppError.badRequest('Upload a PDF, image or Word document up to 10 MB');
       }
+      requireFileType(type, req.body, AppError.badRequest);
       const path = `${e.id}/${randomUUID()}.${ext}`;
       await ctx.storage().upload(DOC_BUCKET, path, req.body, type);
       const row = await withAudit(ctx.db, ctx.actor, 'employee_documents', async (tx) => {
@@ -581,6 +587,7 @@ export function employeeRoutes(): Router {
       const ext = PHOTO_TYPES[type];
       if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0)
         throw AppError.badRequest('Upload a PNG, JPEG or WebP up to 2 MB');
+      requireFileType(type, req.body, AppError.badRequest);
       const path = `${e.id}/${randomUUID()}.${ext}`;
       await ctx.storage().upload(PHOTO_BUCKET, path, req.body, type);
       await withAudit(ctx.db, ctx.actor, 'employees', async (tx) => {

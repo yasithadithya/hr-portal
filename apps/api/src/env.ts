@@ -35,6 +35,10 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default('HR Portal <no-reply@hrportal.local>'),
   /** Base URL for links in emails; default https://<tenant primary domain>. */
   APP_BASE_URL: z.string().optional(),
+  /** Requests per minute (0 disables). In-memory per instance. */
+  RATE_LIMIT_PER_IP: z.coerce.number().int().min(0).default(1200),
+  RATE_LIMIT_PER_TENANT: z.coerce.number().int().min(0).default(10000),
+  RATE_LIMIT_SENSITIVE_PER_IP: z.coerce.number().int().min(0).default(120),
   TENANT_MAX_POOLS: z.coerce.number().int().positive().default(50),
   TENANT_POOL_SIZE: z.coerce.number().int().positive().default(5),
   TENANT_POOL_IDLE_MS: z.coerce

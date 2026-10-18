@@ -1,5 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { auditColumns, id } from './columns';
 import { employees } from './employees';
@@ -20,6 +30,9 @@ export const appUsers = pgTable(
     status: text('status', { enum: APP_USER_STATUSES }).notNull().default('invited'),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     invitedAt: timestamp('invited_at', { withTimezone: true }),
+    /** PDPA: the privacy notice version this user last acknowledged. */
+    privacyAckVersion: integer('privacy_ack_version'),
+    privacyAckAt: timestamp('privacy_ack_at', { withTimezone: true }),
     ...auditColumns(),
   },
   (t) => [

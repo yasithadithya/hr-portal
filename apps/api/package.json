@@ -22,7 +22,7 @@
     "express": "^5.3.0",
     "helmet": "^8.3.0",
     "jose": "^6.2.12",
-    "nodemailer": "^7.0.13",
+    "nodemailer": "^10.1.2",
     "pdfkit": "^0.17.2",
     "pg-boss": "^10.4.2",
     "pino": "^10.4.0",
