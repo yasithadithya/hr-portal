@@ -322,23 +322,23 @@ calculatePayslip({
 - Formula components use a **safe expression evaluator** (e.g. `expr-eval` with a whitelist of variables like `BASIC`, `WORKING_DAYS`) — never `eval`.
 
 ### Golden tests (must exist before UI work)
-- [ ] `__fixtures__/*.json` — input + expected output per case, created **with the client's accountant**: basic only; with allowances (EPF-applicable and not); mid-month joiner; leaver; no-pay; OT normal + holiday; bonus; loan; each APIT slab boundary (149,999 / 150,000 / 150,001 …); negative net guard
-- [ ] Test that fails if any rate literal appears in engine source
+- [~] `__fixtures__/*.json` — input + expected output per case, created **with the client's accountant**: _19 SAMPLE fixtures exist and pass (all listed cases); they must be re-checked with the accountant_ — basic only; with allowances (EPF-applicable and not); mid-month joiner; leaver; no-pay; OT normal + holiday; bonus; loan; each APIT slab boundary (149,999 / 150,000 / 150,001 …); negative net guard
+- [x] Test that fails if any rate literal appears in engine source
 
 ### Workflow & UI
-- [ ] Payroll settings: components, statutory settings, tax tables (with "add new table effective from" — never edit history), bank templates
-- [ ] Employee pay setup tab (salary history, recurring components, tax profile, bank details)
-- [ ] Run wizard: open period → check readiness (missing salary, unlocked attendance, missing bank details, exits) → import/enter one-offs → calculate (background job, progress) → review grid with variance vs last month (highlight >X% change) → approve → lock → mark paid
-- [ ] Re-calc allowed until approved; after lock, corrections only through an **adjustment run** in a later period
-- [ ] Payslip PDF (PDFKit, tenant branding), bulk generate, optional password-protect with NIC/DOB (setting), email via job, available in self-service
-- [ ] Reports & exports:
-  - [ ] Payroll register (by dept/cost centre), component summary, variance report
-  - [ ] **EPF monthly contribution schedule** (C-Form data) — export format confirmed with client before building
-  - [ ] **ETF monthly contribution schedule** (R4 data) and half-yearly return data
-  - [ ] **APIT monthly schedule** and **annual T-10 certificate** per employee
-  - [ ] Bank transfer file from template
-  - [ ] GL/journal CSV by `gl_code` + cost centre for accounting import
-- [ ] Payroll permissions: preparer (`payroll.run`) ≠ approver (`payroll.approve`) enforced (no self-approval) — setting can relax for tiny clients
+- [x] Payroll settings: components, statutory settings, tax tables (with "add new table effective from" — never edit history), bank templates
+- [x] Employee pay setup tab (salary history, recurring components, tax profile, bank details)
+- [x] Run wizard: open period → check readiness (missing salary, unlocked attendance, missing bank details, exits) → import/enter one-offs → calculate (background job, progress) → review grid with variance vs last month (highlight >X% change) → approve → lock → mark paid
+- [x] Re-calc allowed until approved; after lock, corrections only through an **adjustment run** in a later period
+- [~] Payslip PDF (PDFKit, tenant branding), bulk generate, optional password-protect with NIC/DOB (setting), email via job, available in self-service
+- [x] Reports & exports (all SAMPLE layouts until confirmed):
+  - [x] Payroll register (by dept/cost centre), component summary, variance report
+  - [~] **EPF monthly contribution schedule** (C-Form data) — export format confirmed with client before building
+  - [~] **ETF monthly contribution schedule** (R4 data) and half-yearly return data
+  - [~] **APIT monthly schedule** and **annual T-10 certificate** per employee
+  - [x] Bank transfer file from template
+  - [x] GL/journal CSV by `gl_code` + cost centre for accounting import
+- [x] Payroll permissions: preparer (`payroll.run`) ≠ approver (`payroll.approve`) enforced (no self-approval) — setting can relax for tiny clients
 
 **Done when:** all golden fixtures pass, a 500-employee run calculates in < 60 s, re-running a calculated run is deterministic, locked runs are immutable (DB trigger), and an accountant signs off one real month's parallel run against their current payroll output.
 
@@ -418,7 +418,7 @@ calculatePayslip({
 - [ ] Exact EPF C-Form / ETF R4 / T-10 output formats your pilot client's accountant submits (paper, Excel, e-return file?)
 - [ ] Which banks the pilot uses for salary transfers and their file layouts
 - [ ] Pilot client's OT, no-pay and allowance rules (get their current payroll sheet)
-- [ ] Payslip password protection: yes/no
+- [x] Payslip password protection: yes/no — built as a setting (none / NIC / DOB); client chooses
 - [ ] Pricing model (per employee per month?) — affects `plans` and billing
 
 ## 7. Decisions log
@@ -509,4 +509,17 @@ _(Claude Code appends dated decisions here.)_
 - **Period lock:** only after the month ends. It reprocesses first and refuses (409 with counts) while there are incomplete days or pending corrections, unless `force`. A trigger freezes locked `attendance_days` (only `is_locked → false` is allowed). All writes into a locked month (punches, imports, corrections, roster) return 409. Unlock needs a reason and is audited. **Phase 7 must block unlocking a month an approved payroll run has used.**
 - **Approval helpers** (`approvalSteps`, `nextStep`) moved to `apps/api/src/lib/approvals.ts` and are shared by leave and attendance (`approval_flows.attendance`, seeded `['manager']`).
 - **Open (Phase 7, don't guess):** whether late minutes, early leave or short leave (hour-unit leave doesn't change the day's expectation) reduce pay. OT *rates* (normal / rest-day / holiday) belong in payroll config. Attendance only reports minutes.
+
+### 2026-10-18 — Phase 7
+- **Built on SAMPLE data (user decision).** The pilot client's figures aren't available yet, so every statutory number, the APIT table, the bank layouts and the report formats are seeded as editable configuration flagged `needs_review`. The UI shows a "Sample payroll data" banner, run readiness warns `SAMPLE_CONFIG`, and each run records `configNeedsReview`. **Before paying real salaries:** confirm EPF/ETF rates, the IRD APIT tables, OT/no-pay rules, the C-Form/R4/T-10 and bank formats, and have the accountant sign off one parallel month (the plan's "done when" item, still open).
+- **Engine (`@hr/payroll`)** is decimal-only and pure, with a full trace. Its order is as planned. Rates are percentages in config. A source scan fails the build on any rate literal (structural constants like 60 min/12 months/100% are allowed; anything else must say `// structural-constant: <reason>`). Negative net: statutory deductions are always taken (`NEGATIVE_NET` blocks approval); loans and other deductions are capped at what's left (`DEDUCTION_SHORTFALL`). Monthly and cumulative (annualised YTD) tax tables both work.
+- **No `expr-eval`.** It's unmaintained and had a prototype-pollution CVE. A ~120-line whitelisted decimal evaluator handles formulas (+ − × ÷, min/max, known variables only). A test proved `constructor`/`__proto__` lookups are blocked; that was a real bug caught during development.
+- **Salaried by default (UQMS trap):** no-pay comes only from approved unpaid-leave days. `employee_salary.nopay_from_absence` opts an employee into absence-based no-pay from the locked attendance month, and `ot_eligible` controls whether attendance OT is paid. OT minutes use approved minutes when `attendance.ot_requires_approval` is on. Rest-day OT pays at the holiday multiplier when `rest_day_ot_as_holiday` is set. A mid-month salary change uses the salary in force at period end (pay the difference as `ARREARS`).
+- **History is immutable:** statutory settings and tax tables are effective-dated. A row that a locked/paid run's config snapshot used can't be edited (409); add a new version instead (a new tax table version closes the previous one the day before). Salary changes can't start inside a locked month. DB triggers make locked/paid runs, their payslips, lines and inputs immutable (only `locked → paid` and recording a payslip's PDF/email time are allowed). One regular run per period (partial unique index).
+- **Workflow:** open month (creates the regular run) → readiness (blocks: no statutory settings, attendance not locked when `payroll.require_locked_attendance`; warns: sample config, no salary, no bank account, no tax profile; info: joiners/leavers) → one-off inputs → calculate (deterministic; recalculation replaces results) → approve (maker-checker: the calculator can't approve unless `payroll.allow_self_approval`; the default payroll_admin role has no approve permission) → lock (loan instalments recovered, fully paid loans close) → paid. Off-cycle and adjustment runs pay only employees with inputs; loans are recovered only in regular runs.
+- **Performance:** inputs are bulk-loaded (one query per kind). 500 employees calculate in about 1.6 s in tests (target < 60 s), so the run happens inline rather than as a background job.
+- **Correlated-subquery gotcha:** inside raw `sql` subqueries, drizzle renders `${table.id}` as a bare `"id"`, which then binds to the *inner* table. Write `"loans"."id"` explicitly. This broke loan recovery, YTD APIT and T-10 totals until a test caught it.
+- **Payslips:** employees see a payslip only after the run is locked. The trace ("Why is this number?") is for payroll staff only. The PDF uses PDFKit (**new dependency**, the stack's PDF library) with company name and brand colour (logo not yet). Optional password = NIC or DOB (YYYYMMDD) via `payroll.payslip_password`; generating fails clearly if that field is missing. **Emailing payslips is deferred to Phase 8** (needs the job queue and EmailSender).
+- **Exports** (CSV with BOM; audited): register, EPF (C-Form data), ETF (R4 data), APIT schedule, T-10 annual totals, GL journal (balanced: earnings and employer contributions debit; deductions, contributions payable and net pay credit), and a bank file built from a template (CSV or fixed width). A fixed-width value that doesn't fit is an error, never truncated. Bank/branch codes live in `employee_bank_codes`.
+- **Not built yet:** ETF half-yearly return, a per-employee T-10 certificate PDF, the payroll leave liability report (Phase 5 leftover), payslip email and the logo on payslips.
 
