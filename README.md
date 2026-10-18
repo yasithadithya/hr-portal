@@ -47,16 +47,24 @@ Then `pnpm control:migrate` and `pnpm tenant:create --slug <slug> --name "<Compa
 
 ## Commands
 
-| Command                                                        | What it does                                          |
-| -------------------------------------------------------------- | ----------------------------------------------------- |
-| `pnpm dev`                                                     | API (`tsx watch`) + web (`next dev`)                  |
-| `pnpm build`                                                   | Build every package/app                               |
-| `pnpm typecheck && pnpm lint && pnpm test`                     | Must pass before a slice is done                      |
-| `pnpm test:e2e`                                                | Playwright smoke tests (builds web, starts api + web) |
-| `pnpm format`                                                  | Prettier                                              |
-| `pnpm db:generate`                                             | drizzle-kit generate for the tenant schema            |
-| `pnpm supabase <cmd>`                                          | Supabase CLI (`start`, `stop`, `status`)              |
-| `pnpm tenants:migrate`, `pnpm tenant:create`, `pnpm seed:demo` | Arrive in Phase 1                                     |
+| Command                                                                          | What it does                                                        |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `pnpm dev`                                                                       | API (`tsx watch`) + web (`next dev`)                                |
+| `pnpm build`                                                                     | Build every package/app                                             |
+| `pnpm typecheck && pnpm lint && pnpm test`                                       | Must pass before a slice is done                                    |
+| `pnpm test:e2e`                                                                  | Playwright smoke tests (builds web, starts api + web)               |
+| `pnpm format`                                                                    | Prettier                                                            |
+| `pnpm db:generate`                                                               | drizzle-kit generate for the tenant schema                          |
+| `pnpm supabase <cmd>`                                                            | Supabase CLI (`start`, `stop`, `status`)                            |
+| `pnpm control:migrate` then `pnpm tenants:migrate [--tenant=<slug>] [--dry-run]` | Migrate the control plane, then every client (always in this order) |
+| `pnpm tenant:create --slug … --existing-project <ref>`                           | Register a client's Supabase project (credentials from env)         |
+| `pnpm tenant:update-secrets --slug <slug>`                                       | Store rotated client credentials (from env)                         |
+| `pnpm seed:demo --tenant=<slug> [--employees=120] [--months=3]`                  | Fill a demo/dev/staging tenant with a realistic company             |
+| `pnpm secrets:rotate-master-key [--dry-run]`                                     | Re-encrypt tenant secrets with `NEW_MASTER_KEY`                     |
+| `pnpm dev:setup`, `pnpm dev:users`                                               | Local Supabase + `dev` tenant; demo sign-ins (`Password123!`)       |
+| `PERF=1 pnpm --filter @hr/api exec vitest run src/modules/perf.test.ts`          | 1,000 employees × 12 months performance check                       |
+
+Guides: [admin](docs/admin-guide.md) · [payroll](docs/payroll-guide.md) · [operations](docs/operations.md) · [release notes](docs/release-notes.md)
 
 ## Layout
 

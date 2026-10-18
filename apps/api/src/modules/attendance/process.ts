@@ -191,7 +191,19 @@ export interface ProcessResult {
  */
 export async function processRange(
   db: Db,
-  opts: { tz: string; from: string; to: string; today: string; employeeIds?: string[] },
+  opts: {
+    tz: string;
+    from: string;
+    to: string;
+    today: string;
+    employeeIds?: string[];
+    /**
+     * Screens pass true: compute only days that have no row yet. Changes that affect existing
+     * days (punches, imports, leave, corrections, roster, assignments, shift rules) reprocess
+     * explicitly, the nightly job finalises yesterday, and lock/Recalculate do a full pass.
+     */
+    onlyMissing?: boolean;
+  },
 ): Promise<ProcessResult> {
   const { tz, from } = opts;
   const to = opts.to > opts.today ? opts.today : opts.to;
@@ -211,6 +223,33 @@ export async function processRange(
       ),
     );
   if (!staff.length) return { processed: 0, skippedLocked: 0 };
+  let missing: Set<string> | null = null;
+  if (opts.onlyMissing) {
+    const have = await db
+      .select({ e: attendanceDays.employeeId, d: attendanceDays.date })
+      .from(attendanceDays)
+      .where(
+        and(
+          inArray(
+            attendanceDays.employeeId,
+            staff.map((e) => e.id),
+          ),
+          gte(attendanceDays.date, from),
+          lte(attendanceDays.date, to),
+        ),
+      );
+    const haveSet = new Set(have.map((r) => `${r.e}:${r.d}`));
+    missing = new Set();
+    for (const e of staff)
+      for (const date of eachDay(from, to)) {
+        if (date < e.joinDate || (e.exitDate && date > e.exitDate)) continue;
+        if (locked.has(monthKey(date)) || haveSet.has(`${e.id}:${date}`)) continue;
+        missing.add(`${e.id}:${date}`);
+      }
+    if (!missing.size) return { processed: 0, skippedLocked: 0 };
+    const need = new Set([...missing].map((k) => k.split(':')[0]));
+    staff.splice(0, staff.length, ...staff.filter((e) => need.has(e.id)));
+  }
   const ids = staff.map((e) => e.id);
   const c = await loadDayContext(db, tz, ids, from, to);
 
@@ -271,6 +310,7 @@ export async function processRange(
         skippedLocked++;
         continue;
       }
+      if (missing && !missing.has(`${e.id}:${date}`)) continue;
       const plan = planDay(c, e, date);
       const rules = plan.shift ? shiftRules(plan.shift) : null;
       const leavePortion = plan.dayType === 'workday' ? (leave.get(`${e.id}:${date}`) ?? 0) : 0;
@@ -331,7 +371,20 @@ export async function processRange(
           sourceSummary: sql`excluded.source_summary`,
           updatedAt: sql`now()`,
         },
-        setWhere: sql`${attendanceDays.isLocked} = false`,
+        // Skip rows whose computed values are unchanged: reprocessing is mostly a no-op, and
+        // rewriting 1,000 identical rows per board load was the slowest path at scale.
+        setWhere: sql`${attendanceDays.isLocked} = false and (
+          attendance_days.shift_id, attendance_days.day_type, attendance_days.expected,
+          attendance_days.leave_portion, attendance_days.first_in, attendance_days.last_out,
+          attendance_days.worked_minutes, attendance_days.late_minutes, attendance_days.early_minutes,
+          attendance_days.ot_minutes, attendance_days.absent_portion, attendance_days.status,
+          attendance_days.source_summary
+        ) is distinct from (
+          excluded.shift_id, excluded.day_type, excluded.expected, excluded.leave_portion,
+          excluded.first_in, excluded.last_out, excluded.worked_minutes, excluded.late_minutes,
+          excluded.early_minutes, excluded.ot_minutes, excluded.absent_portion, excluded.status,
+          excluded.source_summary
+        )`,
       });
   }
   return { processed: rows.length, skippedLocked };

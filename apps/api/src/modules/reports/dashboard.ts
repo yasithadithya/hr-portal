@@ -91,6 +91,7 @@ export async function hrDashboard(ctx: Ctx, scope: Scope): Promise<HrDashboard> 
     const ids = current.map((r) => r.e.id);
     if (ids.length)
       await processRange(ctx.db, {
+        onlyMissing: true,
         tz: ctx.tenant.timezone,
         from: today,
         to: today,

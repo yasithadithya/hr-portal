@@ -11,7 +11,8 @@
   "dependencies": {
     "@hr/control-db": "workspace:*",
     "@hr/db": "workspace:*",
-    "@supabase/supabase-js": "^2.118.0"
+    "@supabase/supabase-js": "^2.118.0",
+    "@hr/shared": "workspace:*"
   },
   "devDependencies": {
     "@hr/config": "workspace:*",

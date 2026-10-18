@@ -288,6 +288,7 @@ const REPORTS: Record<ReportKey, ReportDef> = {
       const staff = await visibleStaff(ctx, scopeOfKey(ctx, 'attendance.read'), q);
       const ids = staff.map((s) => s.e.id);
       await processRange(ctx.db, {
+        onlyMissing: true,
         tz: ctx.tenant.timezone,
         from: range.start,
         to: range.end,

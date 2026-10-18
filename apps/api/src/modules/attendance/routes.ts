@@ -267,6 +267,27 @@ export function attendanceRoutes(): Router {
         .returning();
       return { action: 'update', entityId: params.id, before, after: s, result: s! };
     });
+    // New rules apply to this month's (unlocked) days for everyone on the shift.
+    const today = tenantToday(ctx);
+    const monthStart = `${today.slice(0, 8)}01`;
+    const assigned = await ctx.db
+      .selectDistinct({ id: shiftAssignments.employeeId })
+      .from(shiftAssignments)
+      .where(
+        and(
+          eq(shiftAssignments.shiftId, row.id),
+          lte(shiftAssignments.effectiveFrom, today),
+          or(isNull(shiftAssignments.effectiveTo), gte(shiftAssignments.effectiveTo, monthStart)),
+        ),
+      );
+    if (assigned.length)
+      await processRange(ctx.db, {
+        tz: ctx.tenant.timezone,
+        from: monthStart,
+        to: today,
+        today,
+        employeeIds: assigned.map((a) => a.id),
+      });
     res.json(ok(shiftDto(row)));
   });
 
@@ -535,8 +556,9 @@ export function attendanceRoutes(): Router {
       to = m.end;
       ids = [(await visibleEmployee(ctx, req, query.employeeId!)).id];
     }
-    // Days with no events (absences) only exist once processed, so process before reading.
+    // Days with no events (absences) only exist once processed: fill in any missing ones.
     await processRange(ctx.db, {
+      onlyMissing: true,
       tz: ctx.tenant.timezone,
       from,
       to,
@@ -823,6 +845,7 @@ export function attendanceRoutes(): Router {
       (e) => e.id,
     );
     await processRange(ctx.db, {
+      onlyMissing: true,
       tz: ctx.tenant.timezone,
       from: m.start,
       to: m.end,

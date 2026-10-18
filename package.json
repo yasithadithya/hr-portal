@@ -17,11 +17,13 @@
     "db:generate": "pnpm --filter @hr/db db:generate",
     "tenants:migrate": "pnpm --filter @hr/scripts exec tsx src/tenants-migrate.ts",
     "tenant:create": "pnpm --filter @hr/scripts exec tsx src/tenant-create.ts",
-    "seed:demo": "node -e \"console.log('seed:demo arrives in Phase 10')\"",
+    "seed:demo": "pnpm --filter @hr/scripts exec tsx src/seed-demo.ts",
     "prepare": "husky",
     "control:migrate": "pnpm --filter @hr/scripts exec tsx src/control-migrate.ts",
     "dev:setup": "pnpm --filter @hr/scripts exec tsx src/dev-setup.ts && pnpm control:migrate && pnpm tenant:create --slug dev --name \"Dev Company\" --admin-email admin@dev.local --existing-project local --region local --domain localhost --resume",
-    "dev:users": "pnpm --filter @hr/scripts exec tsx src/dev-users.ts"
+    "dev:users": "pnpm --filter @hr/scripts exec tsx src/dev-users.ts",
+    "secrets:rotate-master-key": "pnpm --filter @hr/scripts exec tsx src/rotate-master-key.ts",
+    "tenant:update-secrets": "pnpm --filter @hr/scripts exec tsx src/tenant-update-secrets.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
