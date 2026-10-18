@@ -13,3 +13,4 @@ export * from './api/leave';
 export * from './api/attendance';
 export * from './api/payroll';
 export * from './api/notifications';
+export * from './api/reports';

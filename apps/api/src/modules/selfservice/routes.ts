@@ -61,6 +61,66 @@ async function dtos(
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
+/** What is waiting for this user's decision (nav badge, /me banner, dashboard). */
+export async function approvalsSummary(ctx: Ctx): Promise<ApprovalsSummary> {
+  const count = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
+  const p = ctx.permissions;
+  const leave = p['leave.approve']
+    ? await count(
+        ctx.db
+          .select({ n: sql<number>`count(*)::int` })
+          .from(leaveRequests)
+          .where(await leaveInboxWhere(ctx)),
+      )
+    : 0;
+  const regs = p['attendance.approve']
+    ? await count(
+        ctx.db
+          .select({ n: sql<number>`count(*)::int` })
+          .from(regularizationRequests)
+          .where(regInboxWhere(ctx)),
+      )
+    : 0;
+  const otScope = p['attendance.approve'];
+  const settings = await getSettings(ctx.db);
+  const overtime =
+    otScope && settings['attendance.ot_requires_approval']
+      ? await count(
+          ctx.db
+            .select({ n: sql<number>`count(*)::int` })
+            .from(attendanceDays)
+            .where(
+              and(
+                gt(attendanceDays.otMinutes, 0),
+                isNull(attendanceDays.otApprovedMinutes),
+                eq(attendanceDays.isLocked, false),
+                scopeCondition(otScope, ctx.user.employeeId, attendanceDays.employeeId),
+                ctx.user.employeeId
+                  ? sql`${attendanceDays.employeeId} <> ${ctx.user.employeeId}`
+                  : undefined,
+              ),
+            ),
+        )
+      : 0;
+  const profileChanges =
+    p['employees.update'] && scopeCovers(p['employees.update'], 'all')
+      ? await count(
+          ctx.db
+            .select({ n: sql<number>`count(*)::int` })
+            .from(profileChangeRequests)
+            .where(eq(profileChangeRequests.status, 'pending')),
+        )
+      : 0;
+  const body: ApprovalsSummary = {
+    leave,
+    regularizations: regs,
+    overtime,
+    profileChanges,
+    total: leave + regs + overtime + profileChanges,
+  };
+  return body;
+}
+
 export function selfServiceRoutes(): Router {
   const router = Router();
   const hr = requirePermission('employees.update', 'all');
@@ -244,63 +304,7 @@ export function selfServiceRoutes(): Router {
 
   // ── Unified approvals ──────────────────────────────────────────────────────
   router.get('/approvals/summary', async (req, res) => {
-    const ctx = authedCtx(req);
-    const count = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
-    const p = ctx.permissions;
-    const leave = p['leave.approve']
-      ? await count(
-          ctx.db
-            .select({ n: sql<number>`count(*)::int` })
-            .from(leaveRequests)
-            .where(await leaveInboxWhere(ctx)),
-        )
-      : 0;
-    const regs = p['attendance.approve']
-      ? await count(
-          ctx.db
-            .select({ n: sql<number>`count(*)::int` })
-            .from(regularizationRequests)
-            .where(regInboxWhere(ctx)),
-        )
-      : 0;
-    const otScope = p['attendance.approve'];
-    const settings = await getSettings(ctx.db);
-    const overtime =
-      otScope && settings['attendance.ot_requires_approval']
-        ? await count(
-            ctx.db
-              .select({ n: sql<number>`count(*)::int` })
-              .from(attendanceDays)
-              .where(
-                and(
-                  gt(attendanceDays.otMinutes, 0),
-                  isNull(attendanceDays.otApprovedMinutes),
-                  eq(attendanceDays.isLocked, false),
-                  scopeCondition(otScope, ctx.user.employeeId, attendanceDays.employeeId),
-                  ctx.user.employeeId
-                    ? sql`${attendanceDays.employeeId} <> ${ctx.user.employeeId}`
-                    : undefined,
-                ),
-              ),
-          )
-        : 0;
-    const profileChanges =
-      p['employees.update'] && scopeCovers(p['employees.update'], 'all')
-        ? await count(
-            ctx.db
-              .select({ n: sql<number>`count(*)::int` })
-              .from(profileChangeRequests)
-              .where(eq(profileChangeRequests.status, 'pending')),
-          )
-        : 0;
-    const body: ApprovalsSummary = {
-      leave,
-      regularizations: regs,
-      overtime,
-      profileChanges,
-      total: leave + regs + overtime + profileChanges,
-    };
-    res.json(ok(body));
+    res.json(ok(await approvalsSummary(authedCtx(req))));
   });
 
   router.get(

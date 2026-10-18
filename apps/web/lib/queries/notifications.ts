@@ -6,10 +6,14 @@ import { z } from 'zod';
 
 import {
   approvalsSummarySchema,
+  hrDashboardSchema,
   notificationListSchema,
+  payrollDashboardSchema,
   pendingOtSchema,
   preferenceSchema,
   profileChangeSchema,
+  reportInfoSchema,
+  reportResultSchema,
   type ProfileChangeInput,
 } from '@hr/shared';
 
@@ -183,3 +187,40 @@ export const useDecideProfileChange = () =>
         : api.post(`/api/v1/profile-changes/${id}/${action}`, profileChangeSchema, {}),
     'Done',
   );
+
+// ── Dashboards & reports (Phase 9) ──────────────────────────────────────────
+export const useHrDashboard = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['dashboard', 'hr'],
+    queryFn: ({ signal }) => api.get('/api/v1/dashboard/hr', hrDashboardSchema, { signal }),
+    enabled,
+    refetchInterval: 5 * 60_000,
+  });
+
+export const usePayrollDashboard = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['dashboard', 'payroll'],
+    queryFn: ({ signal }) =>
+      api.get('/api/v1/dashboard/payroll', payrollDashboardSchema, { signal }),
+    enabled,
+  });
+
+export const useReportCatalog = () =>
+  useQuery({
+    queryKey: ['reports'],
+    queryFn: ({ signal }) => api.get('/api/v1/reports', z.array(reportInfoSchema), { signal }),
+  });
+
+export const useReport = (key: string | null, params: Record<string, string>) =>
+  useQuery({
+    queryKey: ['reports', key, params],
+    queryFn: ({ signal }) =>
+      api.get(
+        `/api/v1/reports/${key}?${new URLSearchParams(params).toString()}`,
+        reportResultSchema,
+        {
+          signal,
+        },
+      ),
+    enabled: !!key,
+  });

@@ -250,7 +250,7 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 - [x] Apply leave (half-days, attachment), my requests, cancel/withdraw
 - [x] Approvals inbox for managers/HR; bulk approve
 - [x] Team calendar (month view; who's off), company calendar with holidays
-- [~] Balance report and leave liability report (days × daily rate later from payroll) — balance report done; liability (× daily rate) needs payroll (Phase 7)
+- [x] Balance report and leave liability report (days × daily rate later from payroll) — liability report added in Phase 9
 - [x] Year-end processing screen with dry-run preview
 
 **Done when:** golden tests for day counting (weekends, half Saturday, holidays, half-day start/end), concurrency test (two simultaneous requests cannot overspend), year-end carry-forward/expiry tests.
@@ -365,10 +365,10 @@ calculatePayslip({
 
 ## Phase 9 — Dashboards & reports
 
-- [ ] HR dashboard: headcount by status/dept/branch, joiners/leavers this month, turnover % (rolling 12 months), today's attendance, pending approvals, expiring documents, upcoming probation ends
-- [ ] Payroll dashboard: cost trend (12 months), cost by dept, EPF/ETF/APIT totals for the month
-- [ ] Report builder-lite: predefined reports with filters + CSV/XLSX export (employee master, leave balances, leave liability, attendance summary, payroll register)
-- [ ] All dashboard queries respect scope (manager sees team)
+- [x] HR dashboard: headcount by status/dept/branch, joiners/leavers this month, turnover % (rolling 12 months), today's attendance, pending approvals, expiring documents, upcoming probation ends
+- [x] Payroll dashboard: cost trend (12 months), cost by dept, EPF/ETF/APIT totals for the month
+- [x] Report builder-lite: predefined reports with filters + CSV/XLSX export (employee master, leave balances, leave liability, attendance summary, payroll register)
+- [x] All dashboard queries respect scope (manager sees team)
 
 ---
 
@@ -536,4 +536,10 @@ _(Claude Code appends dated decisions here.)_
 - **Offline:** punches are never queued offline (geofence integrity). The clock card disables itself with a clear message. The last-known leave balances and payslip list are cached in localStorage, served only when the browser is offline, and cleared on sign-out.
 - **Dependency hygiene:** pg-boss pulls in `pg`, which made pnpm create a second drizzle-orm instance for the API (type errors across packages). Adding `pg` to `@hr/db` and `@hr/control-db` gives every package the same drizzle instance.
 - **Not verified here:** the Lighthouse "installable" audit (the manifest and SW are unchanged from Phase 0, and the push handlers were added). Real push delivery to a phone needs a deployed HTTPS origin; the API side is covered by tests with an in-memory push sender.
+
+### 2026-10-18 — Phase 9
+- **Dashboards** (`/dashboard/hr`, `/dashboard/payroll`). HR: headcount by status/department/branch, joiners/leavers this month, rolling-12-month turnover (= leavers in the last 365 days ÷ average of the headcount then and now), today's attendance (processed on read), pending approvals, documents expiring in 30 days, probation/contract ends in 30 days. Every query applies the caller's `employees.read` scope, so a manager's dashboard is their team, and attendance/documents use their own permission scopes. Payroll (payroll.read all only): employer-cost trend over the last 12 approved/locked/paid regular runs, cost by department and EPF/ETF/APIT totals for the latest run; it shows the sample-data banner while the run's config needed review.
+- **Charts** are deliberately simple and dependency-free: single-series bar lists and a 12-month column trend in the tenant's primary colour, 4px rounded data ends, a hover/focus value on every mark, and a "Show table" view (identity never relies on colour or pointer). Bar heights use whole rupees for drawing only; displayed money stays decimal strings.
+- **Report builder-lite** (`/reports`): employee master (identifiers NIC/EPF/mobile only at all scope), leave balances, **leave liability** (unused paid day-based leave × basic ÷ the payroll no-pay divisor: fixed, or this month's working days; marked "confirm the valuation basis with the accountant"), attendance summary (month) and payroll register (run). The catalogue lists only reports whose permissions the caller holds (liability needs leave.read all + payroll.read all). Each report renders as JSON, CSV (BOM) or XLSX. XLSX uses **write-excel-file (new dependency**, the writer counterpart of the reader already used for imports), with money as numeric cells formatted `#,##0.00`. Every export is audited.
+- The dashboard keeps the API health badge (useful during incidents). Employees without HR/payroll access are pointed to My HR.
 

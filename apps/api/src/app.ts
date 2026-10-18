@@ -27,6 +27,7 @@ import { payrollRunRoutes } from './modules/payroll/routes';
 import { payrollSetupRoutes } from './modules/payroll/setup';
 import { platformRoutes } from './modules/platform/routes';
 import { publicRoutes } from './modules/public/routes';
+import { reportRoutes } from './modules/reports/routes';
 import { roleRoutes } from './modules/roles/routes';
 import { selfServiceRoutes } from './modules/selfservice/routes';
 import { userRoutes } from './modules/users/routes';
@@ -126,6 +127,7 @@ export function createApp({
     api.use(payrollRunRoutes());
     api.use(notificationRoutes({ control: tenancy.control, masterKey: tenancy.masterKey }));
     api.use(selfServiceRoutes());
+    api.use(reportRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

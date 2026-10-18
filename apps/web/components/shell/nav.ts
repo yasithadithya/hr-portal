@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   CalendarDays,
   Clock,
   Inbox,
@@ -74,6 +75,14 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Receipt,
     ready: true,
     anyOf: ['payslips.read'],
+  },
+  {
+    href: '/reports',
+    label: 'Reports',
+    icon: BarChart3,
+    ready: true,
+    anyOf: ['employees.read', 'leave.read', 'attendance.read', 'payroll.read'],
+    minScope: 'team',
   },
   {
     href: '/settings',

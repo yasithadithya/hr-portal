@@ -19,7 +19,7 @@ test('app shell renders, reaches the API, and switches theme', async ({ page }) 
 test('navigation reaches the self-service area', async ({ page, isMobile }) => {
   await login(page, 'employee@dev.local');
   await openNav(page, isMobile);
-  await page.getByRole('link', { name: 'My HR' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'My HR' }).click();
   // The self-service home greets the employee by first name.
   await expect(page.getByRole('heading', { name: /^Hi, / })).toBeVisible();
 });

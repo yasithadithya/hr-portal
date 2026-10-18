@@ -29,6 +29,7 @@
     "pino-http": "^11.0.0",
     "postgres": "catalog:",
     "web-push": "^3.6.7",
+    "write-excel-file": "^2.3.10",
     "zod": "catalog:"
   },
   "devDependencies": {
