@@ -15,9 +15,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hr/shared": "workspace:*",
     "drizzle-orm": "catalog:",
-    "postgres": "catalog:",
-    "@hr/shared": "workspace:*"
+    "pg": "^8.23.1",
+    "postgres": "catalog:"
   },
   "devDependencies": {
     "@hr/config": "workspace:*",

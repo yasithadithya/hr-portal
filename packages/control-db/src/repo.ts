@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull } from 'drizzle-orm';
 
 import type { ControlDb } from './client';
 import {
@@ -213,4 +213,49 @@ export async function getTenantPlan(db: ControlDb, tenant: Tenant) {
     .from(plans)
     .where(and(eq(plans.id, tenant.planId)));
   return plan ?? null;
+}
+
+/**
+ * The tenant's VAPID key pair, created on first use by `generate` (web-push keys are created
+ * in the API so this package stays free of the dependency). Concurrent first calls keep one pair.
+ */
+export async function getOrCreateVapidKeys(
+  db: ControlDb,
+  tenantId: string,
+  masterKey: Buffer,
+  generate: () => { publicKey: string; privateKey: string },
+): Promise<{ publicKey: string; privateKey: string }> {
+  const read = async () => {
+    const [s] = await db
+      .select({ pub: tenantSecrets.vapidPublicKey, priv: tenantSecrets.vapidPrivateKeyEnc })
+      .from(tenantSecrets)
+      .where(eq(tenantSecrets.tenantId, tenantId));
+    return s?.pub && s.priv
+      ? { publicKey: s.pub, privateKey: decryptSecret(s.priv, masterKey) }
+      : null;
+  };
+  const existing = await read();
+  if (existing) return existing;
+  const keys = generate();
+  await db
+    .update(tenantSecrets)
+    .set({
+      vapidPublicKey: keys.publicKey,
+      vapidPrivateKeyEnc: encryptSecret(keys.privateKey, masterKey),
+    })
+    .where(and(eq(tenantSecrets.tenantId, tenantId), isNull(tenantSecrets.vapidPublicKey)));
+  const stored = await read();
+  if (!stored) throw new Error(`Tenant ${tenantId} has no secrets row`);
+  return stored;
+}
+
+export async function findTenantById(db: ControlDb, id: string): Promise<Tenant | null> {
+  const [t] = await db.select().from(tenants).where(eq(tenants.id, id));
+  return t ?? null;
+}
+
+/** Primary (else first) domain of a tenant, for absolute links in emails. */
+export async function primaryDomain(db: ControlDb, tenantId: string): Promise<string | null> {
+  const rows = await listTenantDomains(db, tenantId);
+  return (rows.find((d) => d.isPrimary) ?? rows[0])?.host ?? null;
 }

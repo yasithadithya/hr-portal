@@ -3,6 +3,7 @@ import type { RequestHandler } from 'express';
 import type { TenantConnection } from '@hr/control-db';
 
 import '../context';
+import type { JobQueue } from '../jobs/queue';
 import { supabaseAuthAdmin, type AuthAdmin } from '../lib/authAdmin';
 import { AppError } from '../lib/errors';
 import { supabaseStorage, type Storage } from '../lib/storage';
@@ -10,6 +11,9 @@ import type { TenantRegistry } from '../tenancy/registry';
 
 export type AuthAdminFactory = (conn: TenantConnection) => AuthAdmin;
 export type StorageFactory = (conn: TenantConnection) => Storage;
+
+/** No queue configured: jobs are dropped (in-app notifications are still stored). */
+const noJobs: JobQueue = { send: async () => {} };
 
 const defaultAuthAdmin: AuthAdminFactory = (conn) =>
   supabaseAuthAdmin(conn.supabaseUrl, conn.serviceRoleKey);
@@ -21,7 +25,11 @@ const defaultAuthAdmin: AuthAdminFactory = (conn) =>
  */
 export function tenantMiddleware(
   registry: TenantRegistry,
-  opts: { authAdmin?: AuthAdminFactory | undefined; storage?: StorageFactory | undefined } = {},
+  opts: {
+    authAdmin?: AuthAdminFactory | undefined;
+    storage?: StorageFactory | undefined;
+    jobs?: JobQueue | undefined;
+  } = {},
 ): RequestHandler {
   const authAdminFactory = opts.authAdmin ?? defaultAuthAdmin;
   const storageFactory =
@@ -49,6 +57,7 @@ export function tenantMiddleware(
       authAdmin: () => (admin ??= authAdminFactory(resolved.connection)),
       storage: () => (storage ??= storageFactory(resolved.connection)),
       permissions: {},
+      jobs: opts.jobs ?? noJobs,
       actor: {
         userId: null,
         ip: req.ip ?? null,

@@ -313,6 +313,10 @@ describe('payroll run', () => {
   it('employees see their own locked payslip and PDF, never someone else’s', async () => {
     const list = (await as(staff).get('/api/v1/payslips')).body.data;
     expect(list).toHaveLength(1);
+    await h.jobs.drain();
+    const notes = (await as(staff).get('/api/v1/notifications')).body.data.items;
+    expect(notes[0]).toMatchObject({ event: 'payroll.payslip_published', link: '/me/payslips' });
+    expect(h.email.sent.some((m) => m.to === 's@a.lk' && /payslip/i.test(m.subject))).toBe(true);
     const own = (await as(staff).get(`/api/v1/payslips/${list[0].id}`)).body.data;
     expect(own.trace).toBeNull();
     expect(own.net).toBe('192810.00');

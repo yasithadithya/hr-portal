@@ -21,6 +21,20 @@ const envSchema = z.object({
   MASTER_KEY: z.string().optional(),
   /** Control-plane Supabase project URL; platform admins authenticate against its Auth. */
   CONTROL_SUPABASE_URL: z.string().optional(),
+  /** Background jobs: pg-boss on the control-plane DB (needs a session/direct URL, not the transaction pooler). */
+  JOBS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  JOBS_DATABASE_URL: z.string().optional(),
+  /** Daily tenant job (cron, Asia/Colombo). */
+  JOBS_DAILY_CRON: z.string().default('30 1 * * *'),
+  EMAIL_PROVIDER: z.enum(['log', 'smtp', 'resend']).default('log'),
+  SMTP_URL: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('HR Portal <no-reply@hrportal.local>'),
+  /** Base URL for links in emails; default https://<tenant primary domain>. */
+  APP_BASE_URL: z.string().optional(),
   TENANT_MAX_POOLS: z.coerce.number().int().positive().default(50),
   TENANT_POOL_SIZE: z.coerce.number().int().positive().default(5),
   TENANT_POOL_IDLE_MS: z.coerce

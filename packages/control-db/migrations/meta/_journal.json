@@ -8,6 +8,13 @@
       "when": 1792262614661,
       "tag": "0000_control_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792295323748,
+      "tag": "0001_vapid_keys",
+      "breakpoints": true
     }
   ]
 }

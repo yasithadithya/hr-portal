@@ -24,7 +24,11 @@ import { createTestDatabase, dropTestDatabase } from '@hr/db/testing';
 
 import { createApp, type AppOptions } from '../app';
 import { loadEnv } from '../env';
+import { createJobHandlers } from '../jobs/handlers';
+import { InlineQueue } from '../jobs/queue';
+import { memorySender } from '../lib/email';
 import { localJwks } from '../lib/jwt';
+import { memoryPush } from '../lib/push';
 import { memoryStorage } from '../lib/storage';
 import { PoolManager } from '../tenancy/pools';
 import { TenantRegistry } from '../tenancy/registry';
@@ -100,6 +104,23 @@ export async function createHarness(
   const pools = new PoolManager({ maxPools: 10, connectionsPerPool: 2, idleMs: 60_000 });
   const registry = new TenantRegistry({ control, masterKey, pools });
   const env = loadEnv({ NODE_ENV: 'test', TRUST_PROXY: 'loopback' });
+  // Jobs run in-process; tests await `jobs.drain()` and inspect `email.sent` / `push.sent`.
+  const email = memorySender();
+  const push = memoryPush();
+  const jobs = new InlineQueue();
+  jobs.register(
+    createJobHandlers({
+      control,
+      pools,
+      masterKey,
+      email,
+      push,
+      jobs,
+      logger: pino({ level: 'silent' }),
+      appBaseUrl: 'http://app.test',
+      pushSubject: 'mailto:test@hr.test',
+    }),
+  );
   const app = createApp({
     env,
     logger: pino({ level: 'silent' }),
@@ -111,6 +132,8 @@ export async function createHarness(
       jwks: localJwks(jwks),
       authAdmin,
       storage: () => storage,
+      masterKey,
+      jobs,
     },
     ...extra,
   });
@@ -184,6 +207,9 @@ export async function createHarness(
     masterKey,
     invites,
     storage,
+    email,
+    push,
+    jobs,
     sign,
     tokenFor,
     createUser,

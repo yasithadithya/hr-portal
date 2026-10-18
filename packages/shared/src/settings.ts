@@ -63,6 +63,12 @@ export const SETTINGS = {
     schema: z.boolean(),
     default: true,
   },
+  'notifications.reminder_days': {
+    label: 'Remind HR this many days before probation or contract end dates',
+    group: 'notifications',
+    schema: z.number().int().min(1).max(120),
+    default: 14,
+  },
 } as const satisfies Record<
   string,
   { label: string; group: string; schema: z.ZodType; default: unknown }

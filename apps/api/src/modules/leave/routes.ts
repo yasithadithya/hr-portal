@@ -28,6 +28,7 @@ import { AppError } from '../../lib/errors';
 import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 import { tenantToday } from '../employees/service';
+import * as events from '../notifications/events';
 
 import { balanceOf, balancesFor, employeeCalendar, resolvePolicy, typesById } from './engine';
 import * as service from './service';
@@ -357,6 +358,7 @@ export function leaveRoutes(): Router {
     async (req, res) => {
       const ctx = authedCtx(req);
       const r = await service.apply(ctx, parsed(req, applySchemas).body);
+      await events.leaveSubmitted(ctx, r);
       res.status(201).json(ok((await requestDtos(ctx, [r]))[0]));
     },
   );
@@ -423,6 +425,7 @@ export function leaveRoutes(): Router {
         const ctx = authedCtx(req);
         const { params, body } = parsed(req, decideSchemas);
         const r = await service.decide(ctx, params.id, action, body.note ?? null);
+        await events.leaveDecided(ctx, r);
         res.json(ok((await requestDtos(ctx, [r]))[0]));
       },
     );
@@ -441,7 +444,8 @@ export function leaveRoutes(): Router {
       // Each decision is its own transaction: one failure doesn't undo the others.
       for (const id of body.ids) {
         try {
-          await service.decide(ctx, id, body.action, body.note ?? null);
+          const r = await service.decide(ctx, id, body.action, body.note ?? null);
+          await events.leaveDecided(ctx, r);
           done.push(id);
         } catch (err) {
           failed.push({ id, message: err instanceof Error ? err.message : 'Failed' });

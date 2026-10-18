@@ -2,6 +2,7 @@ import type { Tenant } from '@hr/control-db';
 import type { Actor, TenantDb } from '@hr/db';
 import type { PermissionKey, PermissionMap, Scope } from '@hr/shared';
 
+import type { JobQueue } from './jobs/queue';
 import type { AuthAdmin } from './lib/authAdmin';
 import type { Storage } from './lib/storage';
 
@@ -26,6 +27,8 @@ export interface RequestContext {
   storage: () => Storage;
   user?: AuthedUser;
   permissions: PermissionMap;
+  /** Background jobs (payloads always carry tenantId). */
+  jobs: JobQueue;
   /** Who/where for audit_log rows. */
   actor: Actor;
 }

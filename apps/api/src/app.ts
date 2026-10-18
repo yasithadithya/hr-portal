@@ -5,6 +5,7 @@ import type { Logger } from 'pino';
 import type { ControlDb } from '@hr/control-db';
 
 import type { Env } from './env';
+import type { JobQueue } from './jobs/queue';
 import type { JwksResolver } from './lib/jwt';
 import { authenticate } from './middleware/auth';
 import { allowlistOrigins, corsMiddleware, type OriginCheck } from './middleware/cors';
@@ -19,6 +20,7 @@ import { healthRoutes } from './modules/health/routes';
 import { importRoutes } from './modules/imports/routes';
 import { leaveRoutes } from './modules/leave/routes';
 import { meRoutes } from './modules/me/routes';
+import { notificationRoutes } from './modules/notifications/routes';
 import { orgRoutes } from './modules/org/routes';
 import { payrollConfigRoutes } from './modules/payroll/config';
 import { payrollRunRoutes } from './modules/payroll/routes';
@@ -26,6 +28,7 @@ import { payrollSetupRoutes } from './modules/payroll/setup';
 import { platformRoutes } from './modules/platform/routes';
 import { publicRoutes } from './modules/public/routes';
 import { roleRoutes } from './modules/roles/routes';
+import { selfServiceRoutes } from './modules/selfservice/routes';
 import { userRoutes } from './modules/users/routes';
 import type { PoolManager } from './tenancy/pools';
 import type { TenantRegistry } from './tenancy/registry';
@@ -41,6 +44,10 @@ export interface TenancyDeps {
   authAdmin?: AuthAdminFactory;
   /** Tests inject in-memory storage. */
   storage?: StorageFactory;
+  /** Decrypts tenant secrets (VAPID keys for web push). */
+  masterKey: Buffer;
+  /** Background job queue (pg-boss in production, inline in tests). */
+  jobs?: JobQueue;
 }
 
 export interface AppOptions {
@@ -96,6 +103,7 @@ export function createApp({
       tenantMiddleware(tenancy.registry, {
         authAdmin: tenancy.authAdmin,
         storage: tenancy.storage,
+        jobs: tenancy.jobs,
       }),
     );
     api.use(publicRoutes());
@@ -116,6 +124,8 @@ export function createApp({
     api.use(payrollConfigRoutes());
     api.use(payrollSetupRoutes());
     api.use(payrollRunRoutes());
+    api.use(notificationRoutes({ control: tenancy.control, masterKey: tenancy.masterKey }));
+    api.use(selfServiceRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

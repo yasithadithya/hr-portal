@@ -86,6 +86,9 @@ export const tenantSecrets = platform
     /** Migration URL: session pooler / direct (port 5432). Falls back to db_url when null. */
     dbDirectUrlEnc: text('db_direct_url_enc'),
     serviceRoleKeyEnc: text('service_role_key_enc'),
+    /** Web push (VAPID) key pair for this tenant; private key encrypted like the others. */
+    vapidPublicKey: text('vapid_public_key'),
+    vapidPrivateKeyEnc: text('vapid_private_key_enc'),
     anonKey: text('anon_key'),
     supabaseUrl: text('supabase_url'),
     jwksUrl: text('jwks_url'),

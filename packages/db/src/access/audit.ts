@@ -31,6 +31,29 @@ function redact(value: unknown): unknown {
 }
 
 /**
+ * Appends an audit row inside an existing transaction — for a second entity changed by the same
+ * operation (e.g. a profile change request that updates the employee).
+ */
+export async function appendAudit(
+  tx: Tx,
+  actor: Actor,
+  entity: string,
+  change: Omit<AuditedChange<unknown>, 'result'>,
+): Promise<void> {
+  await tx.insert(auditLog).values({
+    actorUserId: actor.userId,
+    action: change.action,
+    entity,
+    entityId: change.entityId,
+    before: redact(change.before) as never,
+    after: redact(change.after) as never,
+    ip: actor.ip ?? null,
+    userAgent: actor.userAgent?.slice(0, 500) ?? null,
+    requestId: actor.requestId ?? null,
+  });
+}
+
+/**
  * Runs a write in a transaction and appends one audit_log row for it in the same transaction
  * (CLAUDE.md Hard Rules 8 and 9). Every HR-data write goes through this helper.
  */
@@ -42,17 +65,7 @@ export async function withAudit<T>(
 ): Promise<T> {
   return db.transaction(async (tx) => {
     const change = await fn(tx);
-    await tx.insert(auditLog).values({
-      actorUserId: actor.userId,
-      action: change.action,
-      entity,
-      entityId: change.entityId,
-      before: redact(change.before) as never,
-      after: redact(change.after) as never,
-      ip: actor.ip ?? null,
-      userAgent: actor.userAgent?.slice(0, 500) ?? null,
-      requestId: actor.requestId ?? null,
-    });
+    await appendAudit(tx, actor, entity, change);
     return change.result;
   });
 }

@@ -20,6 +20,7 @@ import { AppError } from '../../lib/errors';
 import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 import { getSettings } from '../company/routes';
+import * as events from '../notifications/events';
 
 import { buildBankFile, BankFileError, type PaymentRow } from './bankFile';
 import { payslipPdf } from './pdf';
@@ -226,7 +227,10 @@ export function payrollRunRoutes(): Router {
     ['paid', lock],
   ] as const) {
     router.post(`/payroll/runs/:id/${t}`, guard, validate(idParams), async (req, res) => {
-      res.json(ok(await service.transition(authedCtx(req), parsed(req, idParams).params.id, t)));
+      const ctx = authedCtx(req);
+      const run = await service.transition(ctx, parsed(req, idParams).params.id, t);
+      if (t === 'lock') await events.payslipsPublished(ctx, run.id);
+      res.json(ok(run));
     });
   }
 
