@@ -17,6 +17,8 @@ import { AppError } from '../../lib/errors';
 import { requirePermission } from '../../middleware/auth';
 import { parsed, validate } from '../../middleware/validate';
 
+import { deviceUserImport } from './attendanceDeviceUsers';
+import { attendancePunchImport } from './attendancePunches';
 import { employeeImport } from './employees';
 import {
   commitImport,
@@ -30,11 +32,15 @@ import { leaveBalanceImport } from './leaveBalances';
 const DEFINITIONS: Record<ImportKind, ImportDefinition<any, any>> = {
   employees: employeeImport,
   'leave-balances': leaveBalanceImport,
+  'attendance-punches': attendancePunchImport,
+  'attendance-device-users': deviceUserImport,
 };
 
 const PERMISSION: Record<ImportKind, PermissionKey> = {
   employees: 'employees.create',
   'leave-balances': 'leave.manage',
+  'attendance-punches': 'attendance.manage',
+  'attendance-device-users': 'attendance.manage',
 };
 
 const kindParams = { params: z.object({ kind: z.enum(IMPORT_KINDS) }) };

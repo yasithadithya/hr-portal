@@ -26,6 +26,19 @@ export const SETTINGS = {
     schema: z.number().int().min(1).max(365),
     default: 30,
   },
+  'attendance.ot_requires_approval': {
+    label: 'Overtime must be approved before payroll pays it',
+    group: 'attendance',
+    schema: z.boolean(),
+    default: false,
+  },
+  'attendance.branch_check': {
+    label:
+      'When a branch has both a geofence and an IP allowlist, a clock-in must pass (either / both)',
+    group: 'attendance',
+    schema: z.enum(['either', 'both']),
+    default: 'either',
+  },
 } as const satisfies Record<
   string,
   { label: string; group: string; schema: z.ZodType; default: unknown }

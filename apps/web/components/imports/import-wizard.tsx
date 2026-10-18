@@ -40,7 +40,13 @@ async function readFile(file: File): Promise<string[][]> {
     return data.map((row) =>
       row.map((cell) => {
         if (cell === null || cell === undefined) return '';
-        if (cell instanceof Date) return cell.toISOString().slice(0, 10);
+        if (cell instanceof Date) {
+          // Spreadsheet dates are wall-clock values parsed as UTC; keep the time when there is one.
+          const iso = cell.toISOString();
+          return iso.endsWith('T00:00:00.000Z')
+            ? iso.slice(0, 10)
+            : iso.slice(0, 19).replace('T', ' ');
+        }
         return String(cell);
       }),
     );

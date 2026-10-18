@@ -13,7 +13,9 @@ import { leaveYearOf, LeaveRuleError, requestDays } from '@hr/shared/leave';
 import { countWorkingDays } from '@hr/shared/time';
 
 import type { AuthedUser, RequestContext } from '../../context';
+import { approvalSteps, nextStep, type Step } from '../../lib/approvals';
 import { AppError } from '../../lib/errors';
+import { processRange } from '../attendance/process';
 import { tenantToday } from '../employees/service';
 
 import {
@@ -26,13 +28,11 @@ import {
   type LeaveTypeRow,
 } from './engine';
 
-const { approvalFlows, employees, leaveLedger, leaveRequestDays, leaveRequests, leaveTypes } =
-  schema;
+const { employees, leaveLedger, leaveRequestDays, leaveRequests, leaveTypes } = schema;
 
 type Ctx = RequestContext & { user: AuthedUser };
 type ApplyInput = z.output<typeof applyLeaveSchema>;
 type RequestRow = typeof leaveRequests.$inferSelect;
-type Step = 'manager' | 'hr';
 
 const num = (v: string | number | null) => (v === null ? null : Number(v));
 
@@ -42,25 +42,18 @@ function ruleError(err: unknown): never {
 }
 
 export async function flowSteps(db: Ctx['db'] | Tx): Promise<Step[]> {
-  const [f] = await db.select().from(approvalFlows).where(eq(approvalFlows.module, 'leave'));
-  return (f?.steps as Step[] | undefined)?.length ? (f!.steps as Step[]) : ['manager'];
+  return approvalSteps(db, 'leave');
 }
 
-/**
- * First actionable step at or after `from`. A manager step is skipped when the employee has no
- * manager (falls through to HR); if nothing is left, the request is decided.
- */
-function nextStep(
-  steps: Step[],
-  from: number,
-  e: Employee,
-): { step: number; approver: string | null } | null {
-  for (let i = from; i < steps.length; i++) {
-    if (steps[i] === 'manager' && e.reportsToId) return { step: i, approver: e.reportsToId };
-    if (steps[i] === 'hr') return { step: i, approver: null };
-  }
-  // No manager and no HR step: HR still has to decide.
-  return from === 0 ? { step: steps.length, approver: null } : null;
+/** Approved or cancelled leave changes the attendance days it covers (locked months are skipped). */
+async function syncAttendance(ctx: Ctx, tx: Tx, r: RequestRow) {
+  await processRange(tx, {
+    tz: ctx.tenant.timezone,
+    from: r.startDate,
+    to: r.endDate,
+    today: tenantToday(ctx),
+    employeeIds: [r.employeeId],
+  });
 }
 
 export function toRequestDto(
@@ -428,6 +421,7 @@ export async function decide(
       effectiveDate: r.startDate,
       createdBy: ctx.user.id,
     });
+    await syncAttendance(ctx, tx, r);
     return { action: 'approve', entityId: id, before: r, after, result: after! };
   });
 }
@@ -492,6 +486,7 @@ export async function cancel(ctx: Ctx, id: string, note: string | null) {
       note,
       createdBy: ctx.user.id,
     });
+    await syncAttendance(ctx, tx, r);
     return { action: 'cancel_approved', entityId: id, before: r, after, result: after! };
   });
 }

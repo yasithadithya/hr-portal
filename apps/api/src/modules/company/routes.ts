@@ -4,7 +4,7 @@ import { and, asc, count, eq, gte, lte, ne, sql } from 'drizzle-orm';
 import express, { Router } from 'express';
 import { z } from 'zod';
 
-import { schema, withAudit, type TenantDb } from '@hr/db';
+import { schema, withAudit, type TenantDb, type Tx } from '@hr/db';
 import {
   addressSchema,
   companyProfileSchema,
@@ -47,7 +47,7 @@ const LOGO_URL_TTL = 60 * 60;
 const manage = requirePermission('settings.manage', 'all');
 const idParams = { params: z.object({ id: z.uuid() }) };
 
-export async function getSettings(db: TenantDb) {
+export async function getSettings(db: TenantDb | Tx) {
   const rows = await db.select().from(settings);
   const values = settingDefaults() as Record<string, unknown>;
   for (const r of rows) if (r.key in SETTINGS) values[r.key] = r.value;

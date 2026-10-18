@@ -11,6 +11,7 @@ import { allowlistOrigins, corsMiddleware, type OriginCheck } from './middleware
 import { errorHandler, notFound } from './middleware/errors';
 import { requestLogger } from './middleware/requestLogger';
 import { tenantMiddleware, type AuthAdminFactory, type StorageFactory } from './middleware/tenant';
+import { attendanceRoutes } from './modules/attendance/routes';
 import { auditRoutes } from './modules/audit/routes';
 import { companyRoutes } from './modules/company/routes';
 import { employeeRoutes } from './modules/employees/routes';
@@ -108,6 +109,7 @@ export function createApp({
     api.use(orgRoutes());
     api.use(importRoutes());
     api.use(leaveRoutes());
+    api.use(attendanceRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

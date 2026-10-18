@@ -273,12 +273,12 @@ Order matters: 0 → 1 → 2 → 3 → 4, then 5 and 6 (any order), then 7 (need
 - OT minutes computed per shift rules; OT **approval** optional per tenant setting.
 
 ### Work
-- [ ] Shifts & assignments admin; roster grid (week view) for rotating shifts
-- [ ] PWA clock in/out button with location permission handling and clear rejection messages
-- [ ] Device import: CSV/XLSX from fingerprint devices (mapping of device user id → employee) using import framework; (v1.1: ZKTeco push/pull adapter)
-- [ ] Daily attendance board (exceptions first: absent, late, incomplete)
-- [ ] Regularisation request + approval (reuses `approval_flows`)
-- [ ] Monthly summary per employee and **period lock** (payroll reads only locked periods unless overridden by payroll admin)
+- [x] Shifts & assignments admin; roster grid (week view) for rotating shifts
+- [x] PWA clock in/out button with location permission handling and clear rejection messages
+- [x] Device import: CSV/XLSX from fingerprint devices (mapping of device user id → employee) using import framework; (v1.1: ZKTeco push/pull adapter)
+- [x] Daily attendance board (exceptions first: absent, late, incomplete)
+- [x] Regularisation request + approval (reuses `approval_flows`)
+- [x] Monthly summary per employee and **period lock** (payroll reads only locked periods unless overridden by payroll admin)
 
 **Done when:** tests for late/early/half-day/OT/night shift crossing midnight; reprocessing is idempotent; locked month cannot change.
 
@@ -496,3 +496,17 @@ _(Claude Code appends dated decisions here.)_
 - **Approvals** (`approval_flows.leave`, default `['manager']`): the manager step goes to `reports_to`, or straight to HR if there is none. HR (`leave.approve` all) can act on any step. Nobody approves their own leave. A required supporting document blocks the *final* approval, not the application. Bulk decide runs each request in its own transaction and reports failures individually.
 - **Year-end:** preview, then a single keyed run (`leave_year_runs`; a second run → 409). It carries `min(closing, cap)` into next year. Carried leave is used first (FIFO), and whatever is unused at `carry_forward_expiry_months` expires lazily via an `expiry` ledger row.
 - **E2E stability:** Playwright runs with 2 workers. The full stack shares one machine, and 4 workers caused a timeout plus a Playwright-internal JSON error. Checked that the Next proxy passes large bodies intact (a 616 KB response matched byte-for-byte).
+
+### 2026-10-18 — Phase 6
+- **Processing is synchronous and idempotent** (`modules/attendance/process.ts`). One bulk-loading `processRange` upserts `attendance_days` keyed on employee + date, never touches a locked month, and caps at today. It runs on every trigger: a punch, an approved correction, a device import, a roster/assignment change, a leave approval/cancellation (the leave service calls it inside its transaction), and before the board, the month view, the summary and a lock (absences have no event, so reads process first). A test runs it twice and compares rows. **The nightly run is deferred to Phase 8** (pg-boss), like the job-projection refresh.
+- **What a day expects:** holiday beats everything (expected 0; any work is OT). Then a roster entry (a shift = full workday even on a calendar off-day; `null` = rest day), then the work calendar (full 1 / half 0.5 / off 0). The shift comes from the roster, else the effective-dated assignment. The calendar uses the employee's *current* branch, not their branch on that date (same simplification as leave).
+- **Day rules are shift data** (grace, early grace, unpaid break + "deduct after", half-day threshold, OT-after, punch windows). Late counts from shift start once past grace; OT counts from the (expected) end once the stay reaches OT-after; a half working day expects the first half of the shift. A single punch = `incomplete` (needs a correction), not absent. Employees with no shift use the calendar day, and any work counts as a full day with no late/OT. Shift validation stops consecutive days' punch windows from overlapping (shift length + windows ≤ 24 h).
+- **One example shift `GENERAL` is seeded, flagged `needs_review`**, and nobody is assigned automatically. Saving a shift clears the flag (same as leave policies).
+- **Clock-in:** geofence (branch lat/lng/radius) and/or IP allowlist (branch `allowed_ips`). New setting `attendance.branch_check` = either/both when a branch has both. GPS accuracy is recorded but **not** credited (a generous accuracy makes spoofing trivial). Rejected punches are stored with the exact reason ("about 1112 m from Colombo HQ; allowed within 100 m", "location permission denied"). A 60 s double-tap guard is a UX safeguard, not a business rule. The work date for a night worker clocking out after midnight is yesterday's shift.
+- **Punches are append-only by trigger.** An approved correction adds `manual` punches (with `ref = regularization:<id>`); HR manual punches need a note. Device rows dedupe on employee + instant + source, so re-importing a file adds nothing.
+- **Device import:** `attendance-punches` and `attendance-device-users` import kinds. Dates are `YYYY-MM-DD`/`YYYY/MM/DD`, or **day-first** `DD/MM/YYYY` (the Sri Lankan convention; month-first is not accepted); times are `HH:mm[:ss]` with optional AM/PM, in office time. The import wizard now keeps the time of Excel date-time cells (it used to drop it). A ZKTeco push/pull adapter stays v1.1.
+- **OT approval** is optional (`attendance.ot_requires_approval`). Managers set approved minutes per day on the board (capped at the worked OT, never their own). Reprocessing caps an earlier approval at the new OT. The summary exposes `payableOtMinutes` for payroll.
+- **Period lock:** only after the month ends. It reprocesses first and refuses (409 with counts) while there are incomplete days or pending corrections, unless `force`. A trigger freezes locked `attendance_days` (only `is_locked → false` is allowed). All writes into a locked month (punches, imports, corrections, roster) return 409. Unlock needs a reason and is audited. **Phase 7 must block unlocking a month an approved payroll run has used.**
+- **Approval helpers** (`approvalSteps`, `nextStep`) moved to `apps/api/src/lib/approvals.ts` and are shared by leave and attendance (`approval_flows.attendance`, seeded `['manager']`).
+- **Open (Phase 7, don't guess):** whether late minutes, early leave or short leave (hour-unit leave doesn't change the day's expectation) reduce pay. OT *rates* (normal / rest-day / holiday) belong in payroll config. Attendance only reports minutes.
+

@@ -7,3 +7,4 @@ export * from './auth';
 export * from './audit';
 export * from './org';
 export * from './leave';
+export * from './attendance';

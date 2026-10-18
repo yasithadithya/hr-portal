@@ -1,5 +1,16 @@
-import { formatInTimeZone } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { z } from 'zod';
+
+/** The instant a wall-clock time (`HH:mm` or `HH:mm:ss`) occurs on a business date in `tz`. */
+export function zonedInstant(date: string, time: string, tz: string): Date {
+  const t = time.length === 5 ? `${time}:00` : time;
+  return fromZonedTime(`${date}T${t}`, tz);
+}
+
+/** Wall-clock `HH:mm` of an instant in `tz`. */
+export function wallTime(instant: Date, tz: string): string {
+  return formatInTimeZone(instant, tz, 'HH:mm');
+}
 
 /**
  * Tenant-timezone date helpers (CLAUDE.md Hard Rule 3).

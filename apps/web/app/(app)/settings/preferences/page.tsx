@@ -186,6 +186,51 @@ export default function PreferencesPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle className="text-base">Attendance</CardTitle>
+              <CardDescription>
+                Geofence and office-network checks are set per branch (Organisation → Branches).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex items-center justify-between gap-4">
+                <span>
+                  <span className="block font-medium">Overtime needs approval</span>
+                  <span className="text-muted-foreground text-sm">
+                    Payroll pays only the OT a manager has approved on the daily board.
+                  </span>
+                </span>
+                <Switch
+                  aria-label="Overtime needs approval"
+                  checked={s['attendance.ot_requires_approval']}
+                  onCheckedChange={(v) =>
+                    save.mutate({ key: 'attendance.ot_requires_approval', value: v })
+                  }
+                />
+              </label>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <span>
+                  <span className="block font-medium">Branches with both checks</span>
+                  <span className="text-muted-foreground text-sm">
+                    When a branch has a geofence and an IP allowlist, a clock-in must pass…
+                  </span>
+                </span>
+                <select
+                  aria-label="Branch check rule"
+                  className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                  value={s['attendance.branch_check']}
+                  onChange={(e) =>
+                    save.mutate({ key: 'attendance.branch_check', value: e.target.value })
+                  }
+                >
+                  <option value="either">either check</option>
+                  <option value="both">both checks</option>
+                </select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle className="text-base">Numbering</CardTitle>
               <CardDescription>
                 Employee numbers are assigned automatically when someone is hired.

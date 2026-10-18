@@ -242,7 +242,13 @@ export function useCommitImport(kind: ImportKind) {
       api.post(`/api/v1/imports/${kind}/commit`, importReportSchema, body),
     onSuccess: async (r) => {
       toast.success(`Imported ${r.imported} row(s)`);
-      await qc.invalidateQueries({ queryKey: ['employees'] });
+      // Invalidate whatever the import feeds.
+      const area = kind.startsWith('attendance')
+        ? 'attendance'
+        : kind.startsWith('leave')
+          ? 'leave'
+          : 'employees';
+      await qc.invalidateQueries({ queryKey: [area] });
     },
     onError: (err) => toast.error(errorMessage(err)),
   });

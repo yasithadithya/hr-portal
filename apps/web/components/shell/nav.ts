@@ -44,8 +44,8 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/attendance',
     label: 'Attendance',
     icon: Clock,
-    ready: false,
-    anyOf: ['attendance.approve', 'attendance.manage'],
+    ready: true,
+    anyOf: ['attendance.clock', 'attendance.approve', 'attendance.manage'],
   },
   { href: '/payroll', label: 'Payroll', icon: Wallet, ready: false, anyOf: ['payroll.read'] },
   {
