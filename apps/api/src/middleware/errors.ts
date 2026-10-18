@@ -4,6 +4,7 @@ import { ZodError, z } from 'zod';
 import { fail } from '@hr/shared/envelope';
 
 import { AppError } from '../lib/errors';
+import { reportError } from '../lib/reporter';
 
 export const notFound: RequestHandler = (req, res) => {
   res.status(404).json(fail('NOT_FOUND', `Route ${req.method} ${req.path} not found`));
@@ -86,7 +87,11 @@ export function errorHandler(opts: { exposeInternal: boolean }): ErrorRequestHan
       return;
     }
 
-    req.log.error({ err }, 'Unhandled error');
+    req.log.error({ err, tenant: req.ctx?.tenant.slug }, 'Unhandled error');
+    reportError(err, {
+      tenant: req.ctx?.tenant.slug,
+      requestId: typeof req.id === 'string' ? req.id : null,
+    });
     const message =
       opts.exposeInternal && err instanceof Error ? err.message : 'Internal server error';
     res.status(500).json(fail('INTERNAL_ERROR', message));

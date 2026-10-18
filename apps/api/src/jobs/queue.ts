@@ -1,6 +1,8 @@
 import PgBoss from 'pg-boss';
 import type { Logger } from 'pino';
 
+import { reportError } from '../lib/reporter';
+
 /**
  * Background jobs (CLAUDE.md stack: pg-boss on the control-plane database). Every tenant job's
  * payload carries `tenantId`; handlers resolve the tenant's own database from it.
@@ -69,7 +71,15 @@ export class PgBossQueue implements JobQueue {
     for (const name of JOB_NAMES) {
       await boss.createQueue(name);
       await boss.work<JobData>(name, { batchSize: 1 }, async ([job]) => {
-        if (job) await opts.handlers[name](job.data);
+        if (!job) return;
+        try {
+          await opts.handlers[name](job.data);
+        } catch (err) {
+          // pg-boss retries (retryLimit 3); every failure is logged and reported for alerting.
+          opts.logger.error({ err, job: name, tenantId: job.data.tenantId }, 'job failed');
+          reportError(err, { job: name, tenant: job.data.tenantId ?? null });
+          throw err;
+        }
       });
     }
     await boss.schedule('daily.sweep', opts.dailyCron, {}, { tz: 'Asia/Colombo' });

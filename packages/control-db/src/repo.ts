@@ -2,6 +2,7 @@ import { and, asc, desc, eq, isNull } from 'drizzle-orm';
 
 import type { ControlDb } from './client';
 import {
+  billingSnapshots,
   plans,
   platformAdmins,
   provisioningEvents,
@@ -258,4 +259,58 @@ export async function findTenantById(db: ControlDb, id: string): Promise<Tenant 
 export async function primaryDomain(db: ControlDb, tenantId: string): Promise<string | null> {
   const rows = await listTenantDomains(db, tenantId);
   return (rows.find((d) => d.isPrimary) ?? rows[0])?.host ?? null;
+}
+
+// ── Billing v1 (manual) ─────────────────────────────────────────────────────
+export async function setPlanPrice(
+  db: ControlDb,
+  key: string,
+  price: { pricePerEmployee: string | null; minimumMonthly: string | null; currency?: string },
+) {
+  const [p] = await db
+    .update(plans)
+    .set({
+      pricePerEmployee: price.pricePerEmployee,
+      minimumMonthly: price.minimumMonthly,
+      ...(price.currency ? { currency: price.currency } : {}),
+    })
+    .where(eq(plans.key, key))
+    .returning();
+  return p ?? null;
+}
+
+export async function listPlans(db: ControlDb) {
+  return db.select().from(plans).orderBy(asc(plans.key));
+}
+
+/** Upserts one tenant's monthly snapshot (re-running a month replaces it). */
+export async function upsertBillingSnapshot(
+  db: ControlDb,
+  row: typeof billingSnapshots.$inferInsert,
+) {
+  const [r] = await db
+    .insert(billingSnapshots)
+    .values(row)
+    .onConflictDoUpdate({
+      target: [billingSnapshots.tenantId, billingSnapshots.month],
+      set: {
+        activeEmployees: row.activeEmployees,
+        planKey: row.planKey ?? null,
+        pricePerEmployee: row.pricePerEmployee ?? null,
+        minimumMonthly: row.minimumMonthly ?? null,
+        amount: row.amount ?? null,
+        currency: row.currency ?? 'LKR',
+      },
+    })
+    .returning();
+  return r!;
+}
+
+export async function listBillingSnapshots(db: ControlDb, month: string) {
+  return db
+    .select({ s: billingSnapshots, t: tenants })
+    .from(billingSnapshots)
+    .innerJoin(tenants, eq(tenants.id, billingSnapshots.tenantId))
+    .where(eq(billingSnapshots.month, month))
+    .orderBy(asc(tenants.slug));
 }

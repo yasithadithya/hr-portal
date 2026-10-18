@@ -10,12 +10,18 @@ import { InlineQueue, PgBossQueue, type JobQueue } from './jobs/queue';
 import { logSender, resendSender, smtpSender, type EmailSender } from './lib/email';
 import { createLogger } from './lib/logger';
 import { webPushSender } from './lib/push';
+import { initReporter } from './lib/reporter';
 import { supabaseStorage } from './lib/storage';
 import { PoolManager } from './tenancy/pools';
 import { TenantRegistry } from './tenancy/registry';
 
 const env = loadEnv();
 const logger = createLogger(env);
+initReporter({
+  dsn: env.SENTRY_DSN,
+  environment: env.NODE_ENV,
+  release: process.env.npm_package_version ?? '0.0.0',
+});
 
 if (!env.CONTROL_DATABASE_URL) throw new Error('CONTROL_DATABASE_URL is required');
 const controlSql = connect(env.CONTROL_DATABASE_URL, { max: 5 });

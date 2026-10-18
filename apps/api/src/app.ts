@@ -104,6 +104,7 @@ export function createApp({
         pools: tenancy.pools,
         jwksUrl: tenancy.platformJwksUrl,
         jwks: tenancy.jwks,
+        masterKey: tenancy.masterKey,
       }),
     );
 

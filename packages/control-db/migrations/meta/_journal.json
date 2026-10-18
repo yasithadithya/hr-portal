@@ -15,6 +15,13 @@
       "when": 1792295323748,
       "tag": "0001_vapid_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792299620040,
+      "tag": "0002_billing",
+      "breakpoints": true
     }
   ]
 }

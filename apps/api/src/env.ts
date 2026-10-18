@@ -39,6 +39,8 @@ const envSchema = z.object({
   RATE_LIMIT_PER_IP: z.coerce.number().int().min(0).default(1200),
   RATE_LIMIT_PER_TENANT: z.coerce.number().int().min(0).default(10000),
   RATE_LIMIT_SENSITIVE_PER_IP: z.coerce.number().int().min(0).default(120),
+  /** Error reporting; empty = off. */
+  SENTRY_DSN: z.string().optional(),
   TENANT_MAX_POOLS: z.coerce.number().int().positive().default(50),
   TENANT_POOL_SIZE: z.coerce.number().int().positive().default(5),
   TENANT_POOL_IDLE_MS: z.coerce

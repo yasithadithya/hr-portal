@@ -5,10 +5,12 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgSchema,
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -27,6 +29,10 @@ export const plans = platform
     name: text('name').notNull(),
     maxEmployees: integer('max_employees'),
     features: jsonb('features').$type<Record<string, boolean>>().notNull().default({}),
+    /** Billing v1 (manual): monthly price per active employee; null until pricing is decided. */
+    pricePerEmployee: numeric('price_per_employee', { precision: 10, scale: 2 }),
+    minimumMonthly: numeric('minimum_monthly', { precision: 10, scale: 2 }),
+    currency: text('currency').notNull().default('LKR'),
     createdAt: createdAt(),
   })
   .enableRLS();
@@ -138,5 +144,27 @@ export const provisioningEvents = platform
       at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [index('provisioning_events_tenant_idx').on(t.tenantId, t.at)],
+  )
+  .enableRLS();
+
+/** One row per tenant per month: the employee count billed (manual invoicing, Phase 10). */
+export const billingSnapshots = platform
+  .table(
+    'billing_snapshots',
+    {
+      id: uuid('id').primaryKey().defaultRandom(),
+      tenantId: uuid('tenant_id')
+        .notNull()
+        .references(() => tenants.id, { onDelete: 'cascade' }),
+      month: text('month').notNull(),
+      activeEmployees: integer('active_employees').notNull(),
+      planKey: text('plan_key'),
+      pricePerEmployee: numeric('price_per_employee', { precision: 10, scale: 2 }),
+      minimumMonthly: numeric('minimum_monthly', { precision: 10, scale: 2 }),
+      amount: numeric('amount', { precision: 14, scale: 2 }),
+      currency: text('currency').notNull().default('LKR'),
+      createdAt: createdAt(),
+    },
+    (t) => [uniqueIndex('billing_snapshots_tenant_month').on(t.tenantId, t.month)],
   )
   .enableRLS();

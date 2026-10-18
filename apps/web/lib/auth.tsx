@@ -8,6 +8,7 @@ import { can, meSchema, type Me, type PermissionKey, type Scope } from '@hr/shar
 
 import { api, ApiError, setTokenProvider } from './api';
 import { clearOfflineCache } from './offline';
+import { startReporter } from './reporter';
 import { getSupabase } from './supabase';
 import { usePublicTenant } from './tenant';
 
@@ -62,6 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     retry: false,
     staleTime: 60_000,
   });
+  const tenantSlug = meQuery.data?.tenant.slug ?? null;
+  useEffect(() => {
+    startReporter(tenantSlug);
+  }, [tenantSlug]);
 
   const value: AuthState = {
     supabase,
