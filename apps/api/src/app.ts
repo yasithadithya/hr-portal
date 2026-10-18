@@ -20,6 +20,9 @@ import { importRoutes } from './modules/imports/routes';
 import { leaveRoutes } from './modules/leave/routes';
 import { meRoutes } from './modules/me/routes';
 import { orgRoutes } from './modules/org/routes';
+import { payrollConfigRoutes } from './modules/payroll/config';
+import { payrollRunRoutes } from './modules/payroll/routes';
+import { payrollSetupRoutes } from './modules/payroll/setup';
 import { platformRoutes } from './modules/platform/routes';
 import { publicRoutes } from './modules/public/routes';
 import { roleRoutes } from './modules/roles/routes';
@@ -110,6 +113,9 @@ export function createApp({
     api.use(importRoutes());
     api.use(leaveRoutes());
     api.use(attendanceRoutes());
+    api.use(payrollConfigRoutes());
+    api.use(payrollSetupRoutes());
+    api.use(payrollRunRoutes());
     mountTenant?.(api);
     app.use('/api/v1', api);
   }

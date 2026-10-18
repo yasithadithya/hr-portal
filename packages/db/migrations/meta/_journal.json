@@ -64,6 +64,20 @@
       "when": 1792286965429,
       "tag": "0008_attendance_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792290281798,
+      "tag": "0009_payroll",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792290283928,
+      "tag": "0010_payroll_guards",
+      "breakpoints": true
     }
   ]
 }

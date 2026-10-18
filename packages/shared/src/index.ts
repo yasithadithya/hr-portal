@@ -11,3 +11,4 @@ export * from './api/employees';
 export * from './api/imports';
 export * from './api/leave';
 export * from './api/attendance';
+export * from './api/payroll';

@@ -39,6 +39,30 @@ export const SETTINGS = {
     schema: z.enum(['either', 'both']),
     default: 'either',
   },
+  'payroll.payslip_password': {
+    label: 'Password-protect payslip PDFs with',
+    group: 'payroll',
+    schema: z.enum(['none', 'nic', 'dob']),
+    default: 'none',
+  },
+  'payroll.allow_self_approval': {
+    label: 'Let the person who prepared a payroll also approve it (very small teams only)',
+    group: 'payroll',
+    schema: z.boolean(),
+    default: false,
+  },
+  'payroll.variance_threshold_percent': {
+    label: 'Highlight net pay changes above this % versus last month',
+    group: 'payroll',
+    schema: z.number().min(0).max(1000),
+    default: 10,
+  },
+  'payroll.require_locked_attendance': {
+    label: 'Payroll uses only locked attendance months',
+    group: 'payroll',
+    schema: z.boolean(),
+    default: true,
+  },
 } as const satisfies Record<
   string,
   { label: string; group: string; schema: z.ZodType; default: unknown }
