@@ -1,0 +1,42 @@
+{
+  "name": "03-mid-month-joiner",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 11
+    },
+    "salary": {
+      "basic": "110000"
+    },
+    "recurring": [
+      {
+        "code": "BUDGETARY_RELIEF",
+        "amount": "3500"
+      }
+    ],
+    "oneOff": [],
+    "attendance": {
+      "otNormalMinutes": 0,
+      "otHolidayMinutes": 0,
+      "nopayDays": 0
+    },
+    "loans": []
+  },
+  "expected": {
+    "lines": {
+      "BASIC": "55000.00",
+      "BUDGETARY_RELIEF": "1750.00",
+      "EPF_EE": "4540.00",
+      "EPF_ER": "6810.00",
+      "ETF": "1702.50"
+    },
+    "totals": {
+      "gross": "56750.00",
+      "net": "52210.00",
+      "employerCost": "65262.50"
+    }
+  }
+}

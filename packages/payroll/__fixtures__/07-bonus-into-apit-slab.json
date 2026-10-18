@@ -1,0 +1,46 @@
+{
+  "name": "07-bonus-into-apit-slab",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 22
+    },
+    "salary": {
+      "basic": "150000"
+    },
+    "recurring": [],
+    "oneOff": [
+      {
+        "code": "BONUS",
+        "amount": "50000",
+        "note": "Annual bonus"
+      }
+    ],
+    "attendance": {
+      "otNormalMinutes": 0,
+      "otHolidayMinutes": 0,
+      "nopayDays": 0
+    },
+    "loans": []
+  },
+  "expected": {
+    "lines": {
+      "BONUS": "50000.00",
+      "EPF_EE": "12000.00",
+      "APIT": "3000.00"
+    },
+    "totals": {
+      "gross": "200000.00",
+      "deductions": "15000.00",
+      "net": "185000.00",
+      "employerCost": "222500.00"
+    },
+    "bases": {
+      "epf": "150000.00",
+      "apit": "200000.00"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "08-loan-and-advance",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 22
+    },
+    "salary": {
+      "basic": "80000"
+    },
+    "recurring": [],
+    "oneOff": [],
+    "attendance": {
+      "otNormalMinutes": 0,
+      "otHolidayMinutes": 0,
+      "nopayDays": 0
+    },
+    "loans": [
+      {
+        "ref": "L1",
+        "code": "LOAN_RECOVERY",
+        "amount": "5000"
+      },
+      {
+        "ref": "A1",
+        "code": "SALARY_ADVANCE",
+        "amount": "10000"
+      }
+    ]
+  },
+  "expected": {
+    "lines": {
+      "EPF_EE": "6400.00",
+      "LOAN_RECOVERY": "5000.00",
+      "SALARY_ADVANCE": "10000.00"
+    },
+    "totals": {
+      "net": "58600.00",
+      "employerCost": "92000.00"
+    }
+  }
+}

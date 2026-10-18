@@ -1,0 +1,256 @@
+{
+  "_note": "SAMPLE configuration for golden tests. Rates and APIT slabs follow PLAN.md \u00a74 defaults and MUST be checked against the IRD/EPF/ETF official tables and the pilot client's payroll before go-live.",
+  "statutory": {
+    "epfEmployeeRate": "8",
+    "epfEmployerRate": "12",
+    "etfRate": "3",
+    "nopayDivisorMode": "working_days",
+    "nopayFixedDivisor": null,
+    "otRateBase": "basic",
+    "nopayBase": "basic",
+    "otDivisor": "240",
+    "otMultiplierNormal": "1.5",
+    "otMultiplierHoliday": "2",
+    "roundingMode": "half_up",
+    "roundingScale": 2
+  },
+  "taxTable": {
+    "code": "APIT_T1_SAMPLE",
+    "method": "slab_monthly",
+    "slabs": [
+      {
+        "from": "0",
+        "to": "150000",
+        "rate": "0",
+        "deduct": "0"
+      },
+      {
+        "from": "150000",
+        "to": "233333",
+        "rate": "6",
+        "deduct": "9000"
+      },
+      {
+        "from": "233333",
+        "to": "275000",
+        "rate": "18",
+        "deduct": "37000"
+      },
+      {
+        "from": "275000",
+        "to": "316667",
+        "rate": "24",
+        "deduct": "53500"
+      },
+      {
+        "from": "316667",
+        "to": "358333",
+        "rate": "30",
+        "deduct": "72500"
+      },
+      {
+        "from": "358333",
+        "to": null,
+        "rate": "36",
+        "deduct": "94000"
+      }
+    ]
+  },
+  "components": [
+    {
+      "code": "BASIC",
+      "name": "Basic salary",
+      "kind": "earning",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": true,
+      "isEtfApplicable": true,
+      "isApitApplicable": true,
+      "isProrated": true,
+      "showOnPayslip": true,
+      "sortOrder": 1
+    },
+    {
+      "code": "BUDGETARY_RELIEF",
+      "name": "Budgetary relief allowance",
+      "kind": "earning",
+      "calc": "fixed",
+      "formula": null,
+      "isEpfApplicable": true,
+      "isEtfApplicable": true,
+      "isApitApplicable": true,
+      "isProrated": true,
+      "showOnPayslip": true,
+      "sortOrder": 2
+    },
+    {
+      "code": "TRAVEL",
+      "name": "Travelling allowance",
+      "kind": "earning",
+      "calc": "fixed",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": true,
+      "isProrated": true,
+      "showOnPayslip": true,
+      "sortOrder": 3
+    },
+    {
+      "code": "ATTEND_BONUS",
+      "name": "Attendance bonus",
+      "kind": "earning",
+      "calc": "formula",
+      "formula": "max(0, 2000 - NOPAY_DAYS * 500)",
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": true,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 4
+    },
+    {
+      "code": "BONUS",
+      "name": "Bonus",
+      "kind": "earning",
+      "calc": "variable",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": true,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 5
+    },
+    {
+      "code": "OT",
+      "name": "Overtime",
+      "kind": "earning",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": true,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 6
+    },
+    {
+      "code": "OT_HOLIDAY",
+      "name": "Overtime (holiday)",
+      "kind": "earning",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": true,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 7
+    },
+    {
+      "code": "NOPAY",
+      "name": "No-pay",
+      "kind": "deduction",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": true,
+      "isEtfApplicable": true,
+      "isApitApplicable": true,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 10
+    },
+    {
+      "code": "EPF_EE",
+      "name": "EPF employee 8%",
+      "kind": "deduction",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": false,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 20
+    },
+    {
+      "code": "EPF_ER",
+      "name": "EPF employer 12%",
+      "kind": "employer_contribution",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": false,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 21
+    },
+    {
+      "code": "ETF",
+      "name": "ETF 3%",
+      "kind": "employer_contribution",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": false,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 22
+    },
+    {
+      "code": "APIT",
+      "name": "APIT",
+      "kind": "deduction",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": false,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 23
+    },
+    {
+      "code": "LOAN_RECOVERY",
+      "name": "Loan recovery",
+      "kind": "deduction",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": false,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 30
+    },
+    {
+      "code": "SALARY_ADVANCE",
+      "name": "Salary advance",
+      "kind": "deduction",
+      "calc": "system",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": false,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 31
+    },
+    {
+      "code": "WELFARE",
+      "name": "Welfare society",
+      "kind": "deduction",
+      "calc": "fixed",
+      "formula": null,
+      "isEpfApplicable": false,
+      "isEtfApplicable": false,
+      "isApitApplicable": false,
+      "isProrated": false,
+      "showOnPayslip": true,
+      "sortOrder": 40
+    }
+  ]
+}

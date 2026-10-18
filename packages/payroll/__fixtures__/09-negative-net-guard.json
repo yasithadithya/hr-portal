@@ -1,0 +1,45 @@
+{
+  "name": "09-negative-net-guard",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 22
+    },
+    "salary": {
+      "basic": "10000"
+    },
+    "recurring": [],
+    "oneOff": [
+      {
+        "code": "WELFARE",
+        "amount": "500"
+      }
+    ],
+    "attendance": {
+      "otNormalMinutes": 0,
+      "otHolidayMinutes": 0,
+      "nopayDays": 0
+    },
+    "loans": [
+      {
+        "ref": "L9",
+        "code": "LOAN_RECOVERY",
+        "amount": "20000"
+      }
+    ]
+  },
+  "expected": {
+    "lines": {
+      "EPF_EE": "800.00",
+      "LOAN_RECOVERY": "9200.00"
+    },
+    "absent": ["WELFARE"],
+    "totals": {
+      "net": "0.00"
+    },
+    "warnings": ["DEDUCTION_SHORTFALL", "DEDUCTION_SHORTFALL"]
+  }
+}

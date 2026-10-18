@@ -1,0 +1,28 @@
+{
+  "name": "20-apit-boundary-500000",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 22
+    },
+    "salary": {
+      "basic": "500000"
+    },
+    "recurring": [],
+    "oneOff": [],
+    "attendance": {
+      "otNormalMinutes": 0,
+      "otHolidayMinutes": 0,
+      "nopayDays": 0
+    },
+    "loans": []
+  },
+  "expected": {
+    "lines": {
+      "APIT": "86000.00"
+    }
+  }
+}

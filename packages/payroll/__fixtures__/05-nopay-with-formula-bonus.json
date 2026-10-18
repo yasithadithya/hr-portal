@@ -1,0 +1,50 @@
+{
+  "name": "05-nopay-with-formula-bonus",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 25,
+      "employedWorkingDays": 25
+    },
+    "salary": {
+      "basic": "100000"
+    },
+    "recurring": [
+      {
+        "code": "ATTEND_BONUS",
+        "amount": "0"
+      }
+    ],
+    "oneOff": [],
+    "attendance": {
+      "otNormalMinutes": 0,
+      "otHolidayMinutes": 0,
+      "nopayDays": 2
+    },
+    "loans": []
+  },
+  "expected": {
+    "lines": {
+      "BASIC": "100000.00",
+      "ATTEND_BONUS": "1000.00",
+      "NOPAY": "8000.00",
+      "EPF_EE": "7360.00",
+      "EPF_ER": "11040.00",
+      "ETF": "2760.00",
+      "APIT": "0.00"
+    },
+    "totals": {
+      "gross": "101000.00",
+      "deductions": "15360.00",
+      "net": "85640.00",
+      "employerCost": "114800.00"
+    },
+    "bases": {
+      "epf": "92000.00",
+      "etf": "92000.00",
+      "apit": "93000.00"
+    }
+  }
+}

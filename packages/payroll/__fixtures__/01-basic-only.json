@@ -1,0 +1,43 @@
+{
+  "name": "01-basic-only",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 22
+    },
+    "salary": {
+      "basic": "100000"
+    },
+    "recurring": [],
+    "oneOff": [],
+    "attendance": {
+      "otNormalMinutes": 0,
+      "otHolidayMinutes": 0,
+      "nopayDays": 0
+    },
+    "loans": []
+  },
+  "expected": {
+    "lines": {
+      "BASIC": "100000.00",
+      "EPF_EE": "8000.00",
+      "EPF_ER": "12000.00",
+      "ETF": "3000.00",
+      "APIT": "0.00"
+    },
+    "totals": {
+      "gross": "100000.00",
+      "deductions": "8000.00",
+      "net": "92000.00",
+      "employerCost": "115000.00"
+    },
+    "bases": {
+      "epf": "100000.00",
+      "etf": "100000.00",
+      "apit": "100000.00"
+    }
+  }
+}

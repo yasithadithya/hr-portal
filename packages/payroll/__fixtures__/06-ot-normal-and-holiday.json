@@ -1,0 +1,41 @@
+{
+  "name": "06-ot-normal-and-holiday",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 22
+    },
+    "salary": {
+      "basic": "96000"
+    },
+    "recurring": [],
+    "oneOff": [],
+    "attendance": {
+      "otNormalMinutes": 600,
+      "otHolidayMinutes": 240,
+      "nopayDays": 0
+    },
+    "loans": []
+  },
+  "expected": {
+    "lines": {
+      "OT": "6000.00",
+      "OT_HOLIDAY": "3200.00",
+      "EPF_EE": "7680.00",
+      "EPF_ER": "11520.00",
+      "ETF": "2880.00"
+    },
+    "totals": {
+      "gross": "105200.00",
+      "net": "97520.00",
+      "employerCost": "119600.00"
+    },
+    "bases": {
+      "epf": "96000.00",
+      "apit": "105200.00"
+    }
+  }
+}

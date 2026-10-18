@@ -1,5 +1,9 @@
 /**
  * Pure Sri Lanka payroll engine (CLAUDE.md Hard Rule 11). No DB, no I/O.
- * `calculatePayslip(inputs, config)` and golden fixtures land in Phase 7.
+ * `calculatePayslip(input, config)` returns lines, totals, bases and a full calculation trace.
  */
-export const ENGINE_VERSION = '0.0.0';
+export const ENGINE_VERSION = '1.0.0';
+
+export * from './types';
+export { calculatePayslip, PayrollConfigError, SYSTEM_CODES } from './engine';
+export { evaluateFormula, formulaVariables, FormulaError } from './formula';

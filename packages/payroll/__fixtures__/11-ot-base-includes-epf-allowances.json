@@ -1,0 +1,46 @@
+{
+  "name": "11-ot-base-includes-epf-allowances",
+  "status": "sample \u2014 not yet verified by an accountant",
+  "configOverride": {
+    "statutory": {
+      "otRateBase": "basic_plus_epf_components"
+    }
+  },
+  "input": {
+    "period": {
+      "start": "2026-08-01",
+      "end": "2026-08-31",
+      "workingDays": 22,
+      "employedWorkingDays": 22
+    },
+    "salary": {
+      "basic": "100000"
+    },
+    "recurring": [
+      {
+        "code": "BUDGETARY_RELIEF",
+        "amount": "3500"
+      }
+    ],
+    "oneOff": [],
+    "attendance": {
+      "otNormalMinutes": 480,
+      "otHolidayMinutes": 0,
+      "nopayDays": 0
+    },
+    "loans": []
+  },
+  "expected": {
+    "lines": {
+      "OT": "5175.00",
+      "EPF_EE": "8280.00",
+      "EPF_ER": "12420.00",
+      "ETF": "3105.00"
+    },
+    "totals": {
+      "gross": "108675.00",
+      "net": "100395.00",
+      "employerCost": "124200.00"
+    }
+  }
+}
