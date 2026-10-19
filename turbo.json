@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": ["NEXT_PUBLIC_*", "NODE_ENV"],
+      "env": ["NEXT_PUBLIC_*", "NODE_ENV", "API_URL", "CSP_CONNECT_EXTRA"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
